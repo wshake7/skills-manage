@@ -5,8 +5,8 @@ import { join } from "node:path";
 const binDir = findGlobalBinDir();
 const names =
   process.platform === "win32"
-    ? ["skills-manage.cmd", "skills-manage.ps1"]
-    : ["skills-manage"];
+    ? ["skills-manage.cmd", "skills-manage.ps1", "sm.cmd", "sm.ps1"]
+    : ["skills-manage", "sm"];
 
 for (const name of names) {
   await rm(join(binDir, name), { force: true });

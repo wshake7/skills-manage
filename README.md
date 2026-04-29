@@ -1,4 +1,4 @@
-# skills-manage
+﻿# skills-manage
 
 三层 UI 联动的 AI Skills 自管理系统。项目目标是让 AI skills 可以在云端、自有电脑的系统级目录、以及单个项目目录之间被显式关联、同步、覆盖和管理。
 
@@ -82,10 +82,10 @@ pnpm global:install
 安装后可以直接运行：
 
 ```bash
-skills-manage --help
+sm --help
 ```
 
-该安装命令会在 pnpm 全局 bin 目录中创建指向当前源码仓库的 `skills-manage` 命令，因此后续修改源码后重新执行 `pnpm global:install` 即可刷新全局命令。
+该安装命令会在 pnpm 全局 bin 目录中创建指向当前源码仓库的 `sm` 和 `skills-manage` 命令，因此后续修改源码后重新执行 `pnpm global:install` 即可刷新全局命令。
 
 如果需要移除全局命令：
 
@@ -101,7 +101,7 @@ pnpm global:uninstall
 2. 在该仓库工作区初始化云端配置：
 
 ```bash
-skills-manage init-cloud --dir /path/to/skills-cloud
+sm init-cloud --dir /path/to/skills-cloud
 ```
 
 3. 将模板 workflow 放入云端仓库的 `.github/workflows/`：
@@ -117,13 +117,13 @@ templates/actions/release-skills.yml
 5. 运行云端检查：
 
 ```bash
-skills-manage doctor --layer cloud --dir /path/to/skills-cloud
+sm doctor --layer cloud --dir /path/to/skills-cloud
 ```
 
 6. 发布云端只读数据：
 
 ```bash
-skills-manage publish-cloud-ui --dir /path/to/skills-cloud
+sm publish-cloud-ui --dir /path/to/skills-cloud
 ```
 
 7. 推送到 GitHub，启用 Actions 与 Pages。
@@ -134,14 +134,13 @@ skills-manage publish-cloud-ui --dir /path/to/skills-cloud
 
 系统级用于管理用户电脑上的全局 skills，并可读取已关联的云端仓库状态。
 
-1. 创建系统级目录，例如 `~/.skills-manage`。
-2. 初始化系统级配置：
+1. 初始化系统级配置。默认目录为 `~/.skills-manage`，因此可以在任意工作目录执行：
 
 ```bash
-skills-manage init-system --dir ~/.skills-manage
+sm init-system
 ```
 
-3. 编辑 `~/.skills-manage/skills-system.config.json`，按需配置 `linkedCloud`：
+2. 编辑 `~/.skills-manage/skills-system.config.json`，按需配置 `linkedCloud`：
 
 ```json
 {
@@ -153,22 +152,22 @@ skills-manage init-system --dir ~/.skills-manage
 }
 ```
 
-4. 检查系统级配置、provider 与云端关联：
+3. 检查系统级配置、provider 与云端关联：
 
 ```bash
-skills-manage doctor --layer system --dir ~/.skills-manage
+sm doctor --layer system --dir ~/.skills-manage
 ```
 
-5. 同步系统级 sources：
+4. 同步系统级 sources：
 
 ```bash
-skills-manage sync --layer system --dir ~/.skills-manage
+sm sync --layer system --dir ~/.skills-manage
 ```
 
-6. 启动系统级本地 UI：
+5. 启动系统级本地 UI。默认层级为系统级，默认目录为 `~/.skills-manage`，因此可以在任意工作目录执行：
 
 ```bash
-skills-manage ui --system --dir ~/.skills-manage
+sm ui
 ```
 
 系统级 UI 可以修改系统级配置和 skills，但不直接改写云端仓库。需要修改云端时，应切换到云端仓库流程。
@@ -181,7 +180,7 @@ skills-manage ui --system --dir ~/.skills-manage
 2. 初始化项目级配置：
 
 ```bash
-skills-manage init-project --dir .
+sm init-project --dir .
 ```
 
 3. 编辑 `skills-project.config.json`，按需配置 `linkedSystem`：
@@ -198,19 +197,19 @@ skills-manage init-project --dir .
 4. 检查项目级配置和上游关联：
 
 ```bash
-skills-manage doctor --layer project --dir .
+sm doctor --layer project --dir .
 ```
 
 5. 同步项目级 sources：
 
 ```bash
-skills-manage sync --layer project --dir .
+sm sync --layer project --dir .
 ```
 
 6. 启动项目级本地 UI：
 
 ```bash
-skills-manage ui --project --dir .
+sm ui --project --dir .
 ```
 
 项目级 UI 可以修改当前项目的配置和 skills，但不直接改写系统级或云端配置。需要修改系统级配置时，应切换到系统级 UI。
@@ -220,16 +219,19 @@ skills-manage ui --project --dir .
 当前 CLI 已具备首版骨架：
 
 ```bash
-skills-manage init-cloud
-skills-manage init-system
-skills-manage init-project
-skills-manage doctor --layer project
-skills-manage sync --layer project
-skills-manage ai-update --layer project
-skills-manage publish-cloud-ui
-skills-manage ui --system
-skills-manage ui --project
+sm init-cloud
+sm init-system
+sm init-project
+sm doctor --layer project
+sm sync --layer project
+sm ai-update --layer project
+sm publish-cloud-ui
+sm ui
+sm ui --system
+sm ui --project
 ```
+
+`sm` 是推荐短命令；`skills-manage` 仍作为兼容命令保留。
 
 ## 开发
 

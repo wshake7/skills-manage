@@ -10,24 +10,28 @@ const binDir = findGlobalBinDir();
 await mkdir(binDir, { recursive: true });
 
 if (process.platform === "win32") {
-  await writeFile(
-    join(binDir, "skills-manage.cmd"),
-    `@ECHO off\r\nnode "${cliEntry}" %*\r\n`,
-    "utf8"
-  );
-  await writeFile(
-    join(binDir, "skills-manage.ps1"),
-    `#!/usr/bin/env pwsh\r\nnode "${cliEntry}" @args\r\n`,
-    "utf8"
-  );
+  for (const name of ["skills-manage", "sm"]) {
+    await writeFile(
+      join(binDir, `${name}.cmd`),
+      `@ECHO off\r\nnode "${cliEntry}" %*\r\n`,
+      "utf8"
+    );
+    await writeFile(
+      join(binDir, `${name}.ps1`),
+      `#!/usr/bin/env pwsh\r\nnode "${cliEntry}" @args\r\n`,
+      "utf8"
+    );
+  }
 } else {
-  const shimPath = join(binDir, "skills-manage");
-  await writeFile(shimPath, `#!/usr/bin/env sh\nexec node "${cliEntry}" "$@"\n`, "utf8");
-  await chmod(shimPath, 0o755);
+  for (const name of ["skills-manage", "sm"]) {
+    const shimPath = join(binDir, name);
+    await writeFile(shimPath, `#!/usr/bin/env sh\nexec node "${cliEntry}" "$@"\n`, "utf8");
+    await chmod(shimPath, 0o755);
+  }
 }
 
 console.log(`Installed skills-manage globally at ${binDir}`);
-console.log("Try: skills-manage --help");
+console.log("Try: sm --help");
 
 function findGlobalBinDir() {
   if (process.env.PNPM_HOME) {

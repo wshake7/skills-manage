@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "skills-manage": "./dist/index.js"
+    "skills-manage": "./dist/index.js",
+    "sm": "./dist/index.js"
   },
   "files": [
     "dist"

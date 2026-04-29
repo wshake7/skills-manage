@@ -1,4 +1,4 @@
-# skills-manage
+﻿# skills-manage
 
 A three-layer AI Skills self-management system with linked cloud, system-level, and project-level UIs. The goal is to explicitly link, sync, override, and manage AI skills across a cloud repository, a user's global machine-level workspace, and individual project workspaces.
 
@@ -82,10 +82,10 @@ pnpm global:install
 After installation, run:
 
 ```bash
-skills-manage --help
+sm --help
 ```
 
-The install command creates a `skills-manage` shim in the pnpm global bin directory that points to the current source checkout. Re-run `pnpm global:install` after source changes to refresh the global command.
+The install command creates `sm` and `skills-manage` shims in the pnpm global bin directory that point to the current source checkout. Re-run `pnpm global:install` after source changes to refresh the global command.
 
 To remove the global command:
 
@@ -101,7 +101,7 @@ The cloud layer centrally maintains cloud skills and uses GitHub Actions to reso
 2. Initialize cloud config in that repository workspace:
 
 ```bash
-skills-manage init-cloud --dir /path/to/skills-cloud
+sm init-cloud --dir /path/to/skills-cloud
 ```
 
 3. Copy workflow templates into `.github/workflows/` in the cloud repository:
@@ -117,13 +117,13 @@ templates/actions/release-skills.yml
 5. Check cloud config:
 
 ```bash
-skills-manage doctor --layer cloud --dir /path/to/skills-cloud
+sm doctor --layer cloud --dir /path/to/skills-cloud
 ```
 
 6. Publish read-only cloud data:
 
 ```bash
-skills-manage publish-cloud-ui --dir /path/to/skills-cloud
+sm publish-cloud-ui --dir /path/to/skills-cloud
 ```
 
 7. Push to GitHub and enable Actions and Pages.
@@ -134,14 +134,13 @@ The cloud UI is read-only. It must not expose entry points for editing sources, 
 
 The system layer manages global skills on the user's machine and can read linked cloud repository status.
 
-1. Create a system workspace, for example `~/.skills-manage`.
-2. Initialize system config:
+1. Initialize system config. The default directory is `~/.skills-manage`, so this can be run from any working directory:
 
 ```bash
-skills-manage init-system --dir ~/.skills-manage
+sm init-system
 ```
 
-3. Edit `~/.skills-manage/skills-system.config.json` and configure `linkedCloud` if needed:
+2. Edit `~/.skills-manage/skills-system.config.json` and configure `linkedCloud` if needed:
 
 ```json
 {
@@ -153,22 +152,22 @@ skills-manage init-system --dir ~/.skills-manage
 }
 ```
 
-4. Check system config, provider, and cloud link:
+3. Check system config, provider, and cloud link:
 
 ```bash
-skills-manage doctor --layer system --dir ~/.skills-manage
+sm doctor --layer system --dir ~/.skills-manage
 ```
 
-5. Sync system-level sources:
+4. Sync system-level sources:
 
 ```bash
-skills-manage sync --layer system --dir ~/.skills-manage
+sm sync --layer system --dir ~/.skills-manage
 ```
 
-6. Start the system local UI:
+5. Start the system local UI. The default layer is system and the default directory is `~/.skills-manage`, so this can be run from any working directory:
 
 ```bash
-skills-manage ui --system --dir ~/.skills-manage
+sm ui
 ```
 
 The system UI can modify system config and system skills, but it must not directly rewrite the cloud repository. To change cloud data, switch to the cloud repository flow.
@@ -181,7 +180,7 @@ The project layer manages skills for one specific project and can read system-le
 2. Initialize project config:
 
 ```bash
-skills-manage init-project --dir .
+sm init-project --dir .
 ```
 
 3. Edit `skills-project.config.json` and configure `linkedSystem` if needed:
@@ -198,19 +197,19 @@ skills-manage init-project --dir .
 4. Check project config and upstream links:
 
 ```bash
-skills-manage doctor --layer project --dir .
+sm doctor --layer project --dir .
 ```
 
 5. Sync project-level sources:
 
 ```bash
-skills-manage sync --layer project --dir .
+sm sync --layer project --dir .
 ```
 
 6. Start the project local UI:
 
 ```bash
-skills-manage ui --project --dir .
+sm ui --project --dir .
 ```
 
 The project UI can modify the current project's config and skills, but it must not directly rewrite system-level or cloud config. To change system config, switch to the system UI.
@@ -220,16 +219,19 @@ The project UI can modify the current project's config and skills, but it must n
 The first CLI skeleton includes:
 
 ```bash
-skills-manage init-cloud
-skills-manage init-system
-skills-manage init-project
-skills-manage doctor --layer project
-skills-manage sync --layer project
-skills-manage ai-update --layer project
-skills-manage publish-cloud-ui
-skills-manage ui --system
-skills-manage ui --project
+sm init-cloud
+sm init-system
+sm init-project
+sm doctor --layer project
+sm sync --layer project
+sm ai-update --layer project
+sm publish-cloud-ui
+sm ui
+sm ui --system
+sm ui --project
 ```
+
+`sm` is the recommended short command. `skills-manage` remains available as a compatibility command.
 
 ## Development
 

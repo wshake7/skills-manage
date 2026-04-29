@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { Command, Option } from "commander";
 import {
@@ -16,8 +17,8 @@ import { type Layer, configFileName } from "@skills-manage/schemas";
 const program = new Command();
 
 program
-  .name("skills-manage")
-  .description("Manage cloud, system, and project AI skills.")
+  .name("sm")
+  .description("Manage cloud, system, and project AI skills. Alias: skills-manage.")
   .version("0.1.0");
 
 program
@@ -30,10 +31,10 @@ program
 
 program
   .command("init-system")
-  .description("Initialize a system skills workspace in the current directory.")
-  .option("--dir <path>", "Target directory", ".")
-  .action(async (options: { dir: string }) => {
-    await initLayer("system", resolve(options.dir));
+  .description("Initialize a system skills workspace. Defaults to ~/.skills-manage.")
+  .option("--dir <path>", "Target directory")
+  .action(async (options: { dir?: string }) => {
+    await initLayer("system", rootFor("system", options.dir));
   });
 
 program
@@ -113,17 +114,13 @@ program
 
 program
   .command("ui")
-  .description("Start the local UI for system or project layer.")
+  .description("Start the local UI. Defaults to the system layer from ~/.skills-manage.")
   .option("--system", "Use the system layer")
   .option("--project", "Use the project layer")
-  .option("--dir <path>", "Workspace directory", ".")
-  .action(async (options: { system?: boolean; project?: boolean; dir: string }) => {
-    const layer = options.project ? "project" : options.system ? "system" : undefined;
-    if (!layer) {
-      throw new Error("Select a UI layer with --system or --project.");
-    }
-
-    const config = await readConfig(configPathFor(resolve(options.dir), layer));
+  .option("--dir <path>", "Workspace directory")
+  .action(async (options: { system?: boolean; project?: boolean; dir?: string }) => {
+    const layer: Extract<Layer, "system" | "project"> = options.project ? "project" : "system";
+    const config = await readConfig(configPathFor(rootFor(layer, options.dir), layer));
     if (config.layer === "cloud") {
       throw new Error("Cloud UI is static and must be published with publish-cloud-ui.");
     }
@@ -152,4 +149,16 @@ function layerOption(): Option {
   return new Option("--layer <layer>", "Layer to operate on")
     .choices(["cloud", "system", "project"])
     .default("project") as Option;
+}
+
+function rootFor(layer: Layer, dir?: string): string {
+  if (dir) {
+    return resolve(dir);
+  }
+
+  if (layer === "system") {
+    return join(homedir(), ".skills-manage");
+  }
+
+  return resolve(".");
 }
