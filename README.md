@@ -87,10 +87,11 @@ fork 后天然拥有：
 ### 1. 云端级：直接 Fork 后启用
 
 1. Fork 本仓库到自己的 GitHub 账号或组织，例如 `owner/skills-cloud`。
-2. 在 fork 后的仓库中编辑根目录 `skills-cloud.config.json`，添加 sources、provider 和 Pages 输出配置。
-3. 在 GitHub 仓库设置中启用 Actions。按需配置 provider 所需的 secrets。
-4. 在 GitHub Pages 设置中选择 Actions 或发布分支策略。
-5. 手动运行或等待以下 workflows：
+2. 在 fork 后的仓库中编辑根目录 `skills-cloud.config.json`，添加 sources 和 Pages 输出配置。云端默认使用 `"provider": "deepseek"`。
+3. 在 GitHub 仓库设置中启用 Actions，并在 `Settings -> Secrets and variables -> Actions` 中添加仓库 secret：`DEEPSEEK_API_KEY`。
+4. 可选：在同一页面添加 repository variables：`DEEPSEEK_MODEL` 和 `DEEPSEEK_BASE_URL`。默认分别是 `deepseek-v4-pro` 和 `https://api.deepseek.com`。
+5. 在 GitHub Pages 设置中选择 Actions 或发布分支策略。
+6. 手动运行或等待以下 workflows：
 
 ```txt
 .github/workflows/resolve-sources.yml
@@ -271,7 +272,7 @@ pnpm build
 - pnpm + TypeScript monorepo 根配置
 - 三层 config 与 skill manifest schema
 - core 包首版配置读写、LayerGraph、resolver、git fetcher、manifest 工具
-- Codex/DeepSeek provider 接口与基础占位实现
+- Codex provider 占位实现，DeepSeek provider 已接入 Chat Completions API
 - CLI 首版命令入口
 - local-ui/cloud-ui 权限边界占位包
 - cloud/system/project 初始化模板和云端 Actions 模板

@@ -229,6 +229,11 @@ v1 需要支持：
 - Codex
 - DeepSeek
 
+云端默认使用 DeepSeek。云端运行时不得把 API key 写入仓库文件，而应通过 GitHub Actions 环境注入：
+
+- 必需 secret：`DEEPSEEK_API_KEY`
+- 可选 repository variables：`DEEPSEEK_MODEL`、`DEEPSEEK_BASE_URL`
+
 AI provider 必须通过统一接口接入，便于后续扩展其他服务商。
 
 provider 接口需要覆盖：

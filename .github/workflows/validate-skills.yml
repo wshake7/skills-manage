@@ -20,4 +20,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm --filter skills-manage exec skills-manage doctor --layer cloud
+      - run: pnpm --filter skills-manage exec skills-manage doctor --layer cloud --dir ../..

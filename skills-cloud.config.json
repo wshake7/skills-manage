@@ -2,7 +2,7 @@
   "version": 1,
   "layer": "cloud",
   "sources": [],
-  "provider": "codex",
+  "provider": "deepseek",
   "skillsDir": ".agents/skills",
   "pages": {
     "outDir": "dist/cloud-ui",

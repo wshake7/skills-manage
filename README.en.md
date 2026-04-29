@@ -87,10 +87,11 @@ After forking, the repository already includes:
 ### 1. Cloud Layer: Fork And Enable
 
 1. Fork this repository into your GitHub account or organization, for example `owner/skills-cloud`.
-2. Edit the root `skills-cloud.config.json` in the fork to add sources, provider, and Pages output config.
-3. Enable GitHub Actions in the fork. Configure any provider secrets as needed.
-4. Configure GitHub Pages using either Actions or your preferred publishing branch.
-5. Run manually or wait for these workflows:
+2. Edit the root `skills-cloud.config.json` in the fork to add sources and Pages output config. The cloud layer defaults to `"provider": "deepseek"`.
+3. Enable GitHub Actions in the fork, then add the repository secret `DEEPSEEK_API_KEY` under `Settings -> Secrets and variables -> Actions`.
+4. Optionally add repository variables `DEEPSEEK_MODEL` and `DEEPSEEK_BASE_URL`. They default to `deepseek-v4-pro` and `https://api.deepseek.com`.
+5. Configure GitHub Pages using either Actions or your preferred publishing branch.
+6. Run manually or wait for these workflows:
 
 ```txt
 .github/workflows/resolve-sources.yml
@@ -270,7 +271,7 @@ Done:
 - pnpm + TypeScript monorepo setup
 - Three-layer config and skill manifest schemas
 - Initial core package for config IO, LayerGraph, resolver, git fetcher, and manifest helpers
-- Codex/DeepSeek provider interface with placeholder implementations
+- Codex provider placeholder and DeepSeek provider backed by the Chat Completions API
 - Initial CLI command surface
 - local-ui/cloud-ui permission boundary packages
 - cloud/system/project init templates and GitHub Actions templates

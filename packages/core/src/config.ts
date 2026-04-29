@@ -29,7 +29,7 @@ export function defaultConfig(layer: Layer): SkillsConfig {
       version: 1,
       layer,
       sources: [],
-      provider: "codex",
+      provider: "deepseek",
       skillsDir: ".agents/skills",
       pages: {
         outDir: "dist/cloud-ui",
