@@ -1,56 +1,57 @@
-# tRPC Skill for AI Coding Agents
+# tRPC Skill
 
-## Overview
-tRPC is a TypeScript framework for building end-to-end typesafe APIs. It uses a single source of truth for types via Zod or custom validation, enabling automatic type inference on the client. The repository is a monorepo managed with pnpm and Turborepo.
-
-## Key Packages
-- `packages/server` - Core server library (`@trpc/server`). Contains router creation, procedure builders, middleware system.
-- `packages/client` - Vanilla client (`@trpc/client`). Links, transformers, subscription support.
-- `packages/next` - Next.js integration (`@trpc/next`). App Router and Pages Router adapters.
-- `packages/react-query` - React Query bindings (`@trpc/react-query`). Hooks for queries, mutations, subscriptions.
-- `packages/playground` - A visual API explorer (`@trpc/playground`).
-- `packages/tests` - E2E test suites across adapters.
+tRPC is a TypeScript library for building end-to-end typesafe APIs. This skill assists an AI coding agent in working with the [tRPC monorepo](https://github.com/trpc/trpc).
 
 ## Repository Structure
-- Root is a pnpm workspace. `pnpm-workspace.yaml` defines packages.
-- `scripts` - Code generation, release scripts.
-- `examples` - Various integration examples (Express, Next.js, standalone, etc.).
-- `www` - Documentation website (Docusaurus).
+
+- Uses **pnpm workspaces** and **Turborepo** for monorepo management.
+- Key packages: `server` (core), `client` (vanilla client), `react-query` (React bindings), `next` (Next.js integration), etc.
+- Examples: `examples/` directory.
+- Website: `www/`.
+- Configuration: Turborepo config in `turbo.json`, ESLint, Prettier, TypeScript.
+
+## Setup
+
+1. Clone the repository.
+2. Install dependencies: `pnpm install`.
+3. Build all packages: `pnpm build` (or `turbo build`).
 
 ## Development Workflow
-1. **Setup**: `pnpm install` at root.
-2. **Build**: `pnpm build` compiles all packages. Use `pnpm dev` for watch mode.
-3. **Testing**: 
-   - Unit tests: `pnpm test` (Jest).
-   - E2E tests: `cd packages/tests && pnpm test:e2e` (may require building).
-4. **Linting**: `pnpm lint` (ESLint + Prettier).
-5. **Adding a new package**: Create folder under `packages/`, add `package.json`, ensure `tsconfig.json` extends root, update `pnpm-workspace.yaml` if needed.
-6. **Making changes**: Always run `pnpm build` before submitting PRs. The CI checks build, lint, and test.
 
-## Core Concepts
-- **Router**: Defines a set of procedures. Use `initTRPC` to create a router builder.
-- **Procedure**: A function with an input parser (e.g., Zod schema) and a resolver. Created via `t.procedure.input(...).query/mutation/subscription(...)`.
-- **Context**: Request-scoped data (e.g., user session). Created per request via a function passed to `createContext` in adapters.
-- **Middleware**: Reusable logic that runs before resolver. Used for authentication, logging, etc.
-- **Client**: Created with `createTRPCClient` or `createTRPCReact` for React. Links handle serialization and transport.
+- Run development server (e.g., website): inside a package, `pnpm dev`.
+- Lint code: `pnpm lint` from root.
+- Format: `pnpm format`.
+- Type-check: `pnpm typecheck` (if available).
 
-## Common Patterns
-- **Protecting procedures**: Use a middleware that checks `ctx.user` and throws `TRPCError` if unauthorized.
-- **Transformers**: Use `superjson` for preserving Date, Map, Set, etc. Wire via `transformer` option in both server and client.
-- **Adapters**: Each platform (Express, Fastify, Next.js, etc.) has a dedicated adapter in `@trpc/server/adapters/*`.
-- **SSR with Next.js**: Use `createServerSideHelpers` to prefetch queries on the server.
+## Testing
 
-## Contribution Guidelines
-- All new features should have tests.
-- Breaking changes must be discussed in an issue first.
-- Doc updates in `www` should accompany API changes.
-- Use `changeset` to document changes: `pnpm changeset`.
-- PRs are merged via squash.
+- Framework: **Vitest** with custom utilities.
+- Run all tests: `pnpm test` from root.
+- Run tests for a specific package: `pnpm test --filter=@trpc/server`.
+- Write tests using `test` helpers that simulate a tRPC procedure call.
+
+## Key Concepts
+
+- **Procedures**: input validation with Zod, output typing.
+- **Middleware**: reusable pipeline stages.
+- **Router**: collection of procedures.
+- **Context**: per-request data (database connections, user session).
 
 ## Useful Commands
-- `pnpm build` - build all packages
-- `pnpm --filter @trpc/server test` - test a specific package
-- `pnpm lint --fix` - auto-fix lint errors
-- `pnpm changeset` - create a changeset
 
-When working with this repo, always consider the inter-package dependencies and ensure type consistency across client and server.
+| Command | Description |
+| ------- | ----------- |
+| `pnpm install` | Install dependencies |
+| `pnpm build` | Build all packages |
+| `pnpm lint` | Lint all code |
+| `pnpm test` | Run all tests |
+| `pnpm clean` | Clean build artifacts |
+| `pnpm changeset` | Create a changeset for versioning |
+
+## Contributing
+
+- Before committing, ensure tests pass and lint is clean.
+- Create a changeset with `pnpm changeset` if adding new functionality.
+- Follow the code style (enforced by Prettier/ESLint).
+
+For more details, see the [Contributing Guide](https://github.com/trpc/trpc/blob/main/CONTRIBUTING.md).
