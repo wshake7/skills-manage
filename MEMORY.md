@@ -41,7 +41,7 @@
 - **AI Provider**：`packages/providers` 通过统一接口接入 Codex、DeepSeek，后续可扩展 OpenAI、Claude、本地模型或企业网关。
 - **Resolver v1**：支持 GitHub URL、`package.json`、`go.mod`，目标是解析出 GitHub 仓库地址，无法解析时记录为 unresolved。
 - **Fetcher v1**：默认使用 git shallow clone/fetch，后续可替换为 GitHub API、压缩包下载或缓存镜像。
-- **云端能力**：GitHub Actions 负责定时/手动 resolve、update、validate、release；GitHub Pages 发布只读 UI 与静态 JSON 数据。
+- **云端能力**：GitHub Actions 负责定时/手动 resolve、update、validate、release，并可通过 Context7 refresh workflow 刷新仓库文档索引；GitHub Pages 发布只读 UI 与静态 JSON 数据。
 
 ---
 

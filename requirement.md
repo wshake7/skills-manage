@@ -295,6 +295,7 @@ v1 默认使用 git shallow clone/fetch 获取源仓库代码。
 | `update-skills.yml` | cron + manual dispatch | 拉取源代码，调用 AI 更新 skills |
 | `validate-skills.yml` | PR/push | 校验 manifest、目录结构、重复 skill、schema |
 | `release-skills.yml` | tag/manual | 发布可被本地 CLI 同步的 skills 快照 |
+| `context7-refresh.yml` | push/manual | 调用 Context7 refresh API，更新仓库文档索引 |
 
 每个 workflow 必须在 README 中说明：
 

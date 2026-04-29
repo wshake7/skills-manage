@@ -90,14 +90,16 @@ fork 后天然拥有：
 2. 在 fork 后的仓库中编辑根目录 `skills-cloud.config.json`，添加 sources 和 Pages 输出配置。云端默认使用 `"provider": "deepseek"`。
 3. 在 GitHub 仓库设置中启用 Actions，并在 `Settings -> Secrets and variables -> Actions` 中添加仓库 secret：`DEEPSEEK_API_KEY`。
 4. 可选：在同一页面添加 repository variables：`DEEPSEEK_MODEL` 和 `DEEPSEEK_BASE_URL`。默认分别是 `deepseek-v4-pro` 和 `https://api.deepseek.com`。
-5. 在 GitHub Pages 设置中选择 Actions 或发布分支策略。
-6. 手动运行或等待以下 workflows：
+5. 可选：如果希望 Context7 在主分支 push 后刷新本仓库文档，在 Actions secrets 中添加 `CONTEXT7_API_KEY`。私有仓库还可以添加 `CONTEXT7_GIT_TOKEN`，用于让 Context7 读取仓库内容。
+6. 在 GitHub Pages 设置中选择 Actions 或发布分支策略。
+7. 手动运行或等待以下 workflows：
 
 ```txt
 .github/workflows/resolve-sources.yml
 .github/workflows/update-skills.yml
 .github/workflows/validate-skills.yml
 .github/workflows/release-skills.yml
+.github/workflows/context7-refresh.yml
 ```
 
 #### 云端 Actions 说明
@@ -108,6 +110,7 @@ fork 后天然拥有：
 | `update-skills.yml` | 想让云端根据 sources 自动生成或更新 skills；也会每天定时运行 | 执行 `node packages/cli/dist/index.js ai-update --layer cloud --dir .`，检查 provider，解析 sources，并调用 DeepSeek 生成 skill 文件 | 必需 secret：`DEEPSEEK_API_KEY`；可选 variables：`DEEPSEEK_MODEL`、`DEEPSEEK_BASE_URL`；如仓库未允许 Actions 创建 PR，可配置 `SKILLS_MANAGE_PR_TOKEN` | 生成更新分支并打开 PR，不直接写入主分支；更新 `.agents/skills/<source-id>/`，旧版本归档到 `.agents/skill-archives/<source-id>/` |
 | `validate-skills.yml` | 每次 push 或 PR 自动运行；手动改配置、skill 或 workflow 后用于验收 | 执行 `pnpm check` 和 `node packages/cli/dist/index.js doctor --layer cloud --dir .`，检查 TypeScript、schema、provider 配置和层级图 | 如果 cloud provider 是 DeepSeek，缺少 `DEEPSEEK_API_KEY` 会提示需要配置；本地开发时这是预期提示 | Actions 通过或失败的检查结果 |
 | `release-skills.yml` | 打 tag 或手动发布云端只读 UI 时运行 | 执行 `node packages/cli/dist/index.js publish-cloud-ui --dir .`，生成 `dist/cloud-ui` 静态页面并部署到 GitHub Pages | 需要 GitHub Pages 相关权限；workflow 已声明 `contents: write`、`pages: write`、`id-token: write` | GitHub Pages 站点，以及 `public/data/skills-manage.json`、`dist/cloud-ui/index.html`、`dist/cloud-ui/data/skills-manage.json` |
+| `context7-refresh.yml` | 主分支 push 后或手动运行时刷新 Context7 上的仓库文档 | 调用 Context7 refresh API，`libraryName` 使用当前 GitHub 仓库名 `/${{ github.repository }}` | 可选 secret：`CONTEXT7_API_KEY`；未配置时 workflow 会跳过并输出 warning。私有仓库可额外配置 `CONTEXT7_GIT_TOKEN` | Context7 重新抓取并更新该仓库的文档索引 |
 
 `update-skills.yml` 不会直接把 AI 结果合入主分支。它会创建 `skills-manage/update-<run-id>` 分支并打开 PR；PR 本身也是 GitHub issue，可在 PR 里讨论、review、要求修改或关闭。每次更新已有 skill 前，当前版本会先复制到 `.agents/skill-archives/<source-id>/recent/<timestamp>/`；`recent` 只保留最近 10 个版本，超过 10 个后更早版本会移动到 `.agents/skill-archives/<source-id>/older/`。
 

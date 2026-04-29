@@ -1,0 +1,39 @@
+name: Refresh Context7 docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Context7 refresh
+        env:
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+          CONTEXT7_GIT_TOKEN: ${{ secrets.CONTEXT7_GIT_TOKEN }}
+          LIBRARY_NAME: /${{ github.repository }}
+        run: |
+          if [ -z "${CONTEXT7_API_KEY}" ]; then
+            echo "::warning title=Context7 refresh skipped::Add a repository secret named CONTEXT7_API_KEY to enable Context7 documentation refreshes."
+            exit 0
+          fi
+
+          if [ -n "${CONTEXT7_GIT_TOKEN}" ]; then
+            PAYLOAD=$(jq -n \
+              --arg libraryName "${LIBRARY_NAME}" \
+              --arg gitToken "${CONTEXT7_GIT_TOKEN}" \
+              '{libraryName: $libraryName, gitToken: $gitToken}')
+          else
+            PAYLOAD=$(jq -n \
+              --arg libraryName "${LIBRARY_NAME}" \
+              '{libraryName: $libraryName}')
+          fi
+
+          curl --fail-with-body -sS -X POST https://context7.com/api/v1/refresh \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CONTEXT7_API_KEY}" \
+            -d "${PAYLOAD}"

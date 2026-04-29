@@ -90,14 +90,16 @@ After forking, the repository already includes:
 2. Edit the root `skills-cloud.config.json` in the fork to add sources and Pages output config. The cloud layer defaults to `"provider": "deepseek"`.
 3. Enable GitHub Actions in the fork, then add the repository secret `DEEPSEEK_API_KEY` under `Settings -> Secrets and variables -> Actions`.
 4. Optionally add repository variables `DEEPSEEK_MODEL` and `DEEPSEEK_BASE_URL`. They default to `deepseek-v4-pro` and `https://api.deepseek.com`.
-5. Configure GitHub Pages using either Actions or your preferred publishing branch.
-6. Run manually or wait for these workflows:
+5. Optionally add the `CONTEXT7_API_KEY` Actions secret if you want Context7 to refresh this repository's docs after pushes to the primary branch. Private repositories can also add `CONTEXT7_GIT_TOKEN` so Context7 can read repository content.
+6. Configure GitHub Pages using either Actions or your preferred publishing branch.
+7. Run manually or wait for these workflows:
 
 ```txt
 .github/workflows/resolve-sources.yml
 .github/workflows/update-skills.yml
 .github/workflows/validate-skills.yml
 .github/workflows/release-skills.yml
+.github/workflows/context7-refresh.yml
 ```
 
 #### Cloud Actions Reference
@@ -108,6 +110,7 @@ After forking, the repository already includes:
 | `update-skills.yml` | When you want the cloud layer to generate or update skills from configured sources, or on its daily schedule | Runs `node packages/cli/dist/index.js ai-update --layer cloud --dir .`, checks the provider, resolves sources, and asks DeepSeek to generate skill files | Required secret: `DEEPSEEK_API_KEY`; optional variables: `DEEPSEEK_MODEL`, `DEEPSEEK_BASE_URL`; configure `SKILLS_MANAGE_PR_TOKEN` if the repository does not allow Actions to create PRs | Creates an update branch and opens a PR instead of writing directly to the base branch; updates `.agents/skills/<source-id>/` and archives older versions under `.agents/skill-archives/<source-id>/` |
 | `validate-skills.yml` | Automatically on push and PR; useful after editing config, skills, or workflows | Runs `pnpm check` and `node packages/cli/dist/index.js doctor --layer cloud --dir .` to validate TypeScript, schema, provider config, and layer graph | If the cloud provider is DeepSeek, missing `DEEPSEEK_API_KEY` is reported as a configuration item to fix | Pass/fail validation result in GitHub Actions |
 | `release-skills.yml` | When tagging a release or manually publishing the read-only cloud UI | Runs `node packages/cli/dist/index.js publish-cloud-ui --dir .` to build `dist/cloud-ui` and deploy it to GitHub Pages | Requires GitHub Pages permissions; the workflow declares `contents: write`, `pages: write`, and `id-token: write` | GitHub Pages site plus `public/data/skills-manage.json`, `dist/cloud-ui/index.html`, and `dist/cloud-ui/data/skills-manage.json` |
+| `context7-refresh.yml` | After pushes to the primary branch, or when manually dispatched, to refresh this repository on Context7 | Calls the Context7 refresh API with `libraryName` set to the current GitHub repository, `/${{ github.repository }}` | Optional secret: `CONTEXT7_API_KEY`; the workflow skips with a warning when it is missing. Private repositories can also configure `CONTEXT7_GIT_TOKEN` | Context7 re-fetches and updates the documentation index for this repository |
 
 `update-skills.yml` does not merge AI output directly into the base branch. It creates a `skills-manage/update-<run-id>` branch and opens a PR; a PR is also a GitHub issue, so review and discussion happen there before merging. Before replacing an existing skill, the current version is copied to `.agents/skill-archives/<source-id>/recent/<timestamp>/`. `recent` keeps the latest 10 versions; older versions are moved to `.agents/skill-archives/<source-id>/older/`.
 

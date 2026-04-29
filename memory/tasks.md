@@ -19,4 +19,5 @@
   - 已完成：移除 UI 中的请求端点展示，保留内部状态接口。
   - 已完成：将产品入口调整为 fork-first，仓库根目录直接携带 cloud config、Actions、Pages 数据目录和 `.agents/skills` 约定。
   - 已完成：云端默认切换为 DeepSeek provider，并通过 GitHub Actions secret/variables 注入 API key、模型和 base URL。
+  - 已完成：集成 Context7 GitHub Actions refresh workflow，并同步更新 actions 模板和中英 README。
   - 下一步：把 CLI 初始化改为复制模板文件，并实现本地 Fastify 服务与 React UI 首屏。
