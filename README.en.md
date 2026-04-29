@@ -72,23 +72,25 @@ Every skill managed by this project should include `skill.manifest.json` with `m
 
 ### 0. Local Development Setup
 
-The repository is currently in the v1 skeleton stage. For now, use the source checkout:
+The repository is currently in the v1 skeleton stage. For now, install the CLI globally from the source checkout:
 
 ```bash
 pnpm install
-pnpm build
+pnpm global:install
 ```
 
-Run the built CLI entry during local development:
+After installation, run:
 
 ```bash
-node packages/cli/dist/index.js --help
+skills-manage --help
 ```
 
-After the package is published to npm, the intended usage is:
+The install command creates a `skills-manage` shim in the pnpm global bin directory that points to the current source checkout. Re-run `pnpm global:install` after source changes to refresh the global command.
+
+To remove the global command:
 
 ```bash
-npx skills-manage --help
+pnpm global:uninstall
 ```
 
 ### 1. Cloud Layer: Initialize A Self-Managed GitHub Repository
@@ -99,7 +101,7 @@ The cloud layer centrally maintains cloud skills and uses GitHub Actions to reso
 2. Initialize cloud config in that repository workspace:
 
 ```bash
-node packages/cli/dist/index.js init-cloud --dir /path/to/skills-cloud
+skills-manage init-cloud --dir /path/to/skills-cloud
 ```
 
 3. Copy workflow templates into `.github/workflows/` in the cloud repository:
@@ -115,13 +117,13 @@ templates/actions/release-skills.yml
 5. Check cloud config:
 
 ```bash
-node packages/cli/dist/index.js doctor --layer cloud --dir /path/to/skills-cloud
+skills-manage doctor --layer cloud --dir /path/to/skills-cloud
 ```
 
 6. Publish read-only cloud data:
 
 ```bash
-node packages/cli/dist/index.js publish-cloud-ui --dir /path/to/skills-cloud
+skills-manage publish-cloud-ui --dir /path/to/skills-cloud
 ```
 
 7. Push to GitHub and enable Actions and Pages.
@@ -136,7 +138,7 @@ The system layer manages global skills on the user's machine and can read linked
 2. Initialize system config:
 
 ```bash
-node packages/cli/dist/index.js init-system --dir ~/.skills-manage
+skills-manage init-system --dir ~/.skills-manage
 ```
 
 3. Edit `~/.skills-manage/skills-system.config.json` and configure `linkedCloud` if needed:
@@ -154,19 +156,19 @@ node packages/cli/dist/index.js init-system --dir ~/.skills-manage
 4. Check system config, provider, and cloud link:
 
 ```bash
-node packages/cli/dist/index.js doctor --layer system --dir ~/.skills-manage
+skills-manage doctor --layer system --dir ~/.skills-manage
 ```
 
 5. Sync system-level sources:
 
 ```bash
-node packages/cli/dist/index.js sync --layer system --dir ~/.skills-manage
+skills-manage sync --layer system --dir ~/.skills-manage
 ```
 
 6. Start the system local UI:
 
 ```bash
-node packages/cli/dist/index.js ui --system --dir ~/.skills-manage
+skills-manage ui --system --dir ~/.skills-manage
 ```
 
 The system UI can modify system config and system skills, but it must not directly rewrite the cloud repository. To change cloud data, switch to the cloud repository flow.
@@ -179,7 +181,7 @@ The project layer manages skills for one specific project and can read system-le
 2. Initialize project config:
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js init-project --dir .
+skills-manage init-project --dir .
 ```
 
 3. Edit `skills-project.config.json` and configure `linkedSystem` if needed:
@@ -196,19 +198,19 @@ node /path/to/skills-manage/packages/cli/dist/index.js init-project --dir .
 4. Check project config and upstream links:
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js doctor --layer project --dir .
+skills-manage doctor --layer project --dir .
 ```
 
 5. Sync project-level sources:
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js sync --layer project --dir .
+skills-manage sync --layer project --dir .
 ```
 
 6. Start the project local UI:
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js ui --project --dir .
+skills-manage ui --project --dir .
 ```
 
 The project UI can modify the current project's config and skills, but it must not directly rewrite system-level or cloud config. To change system config, switch to the system UI.

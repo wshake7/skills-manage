@@ -72,23 +72,25 @@ skills-manage/
 
 ### 0. 本地开发安装
 
-当前仓库仍处于 v1 骨架阶段，推荐先用源码方式运行：
+当前仓库仍处于 v1 骨架阶段，推荐先用源码方式安装到全局：
 
 ```bash
 pnpm install
-pnpm build
+pnpm global:install
 ```
 
-本地开发时可以直接运行编译后的 CLI：
+安装后可以直接运行：
 
 ```bash
-node packages/cli/dist/index.js --help
+skills-manage --help
 ```
 
-后续发布到 npm 后，可使用：
+该安装命令会在 pnpm 全局 bin 目录中创建指向当前源码仓库的 `skills-manage` 命令，因此后续修改源码后重新执行 `pnpm global:install` 即可刷新全局命令。
+
+如果需要移除全局命令：
 
 ```bash
-npx skills-manage --help
+pnpm global:uninstall
 ```
 
 ### 1. 云端级：初始化 GitHub 自管理仓库
@@ -99,7 +101,7 @@ npx skills-manage --help
 2. 在该仓库工作区初始化云端配置：
 
 ```bash
-node packages/cli/dist/index.js init-cloud --dir /path/to/skills-cloud
+skills-manage init-cloud --dir /path/to/skills-cloud
 ```
 
 3. 将模板 workflow 放入云端仓库的 `.github/workflows/`：
@@ -115,13 +117,13 @@ templates/actions/release-skills.yml
 5. 运行云端检查：
 
 ```bash
-node packages/cli/dist/index.js doctor --layer cloud --dir /path/to/skills-cloud
+skills-manage doctor --layer cloud --dir /path/to/skills-cloud
 ```
 
 6. 发布云端只读数据：
 
 ```bash
-node packages/cli/dist/index.js publish-cloud-ui --dir /path/to/skills-cloud
+skills-manage publish-cloud-ui --dir /path/to/skills-cloud
 ```
 
 7. 推送到 GitHub，启用 Actions 与 Pages。
@@ -136,7 +138,7 @@ node packages/cli/dist/index.js publish-cloud-ui --dir /path/to/skills-cloud
 2. 初始化系统级配置：
 
 ```bash
-node packages/cli/dist/index.js init-system --dir ~/.skills-manage
+skills-manage init-system --dir ~/.skills-manage
 ```
 
 3. 编辑 `~/.skills-manage/skills-system.config.json`，按需配置 `linkedCloud`：
@@ -154,19 +156,19 @@ node packages/cli/dist/index.js init-system --dir ~/.skills-manage
 4. 检查系统级配置、provider 与云端关联：
 
 ```bash
-node packages/cli/dist/index.js doctor --layer system --dir ~/.skills-manage
+skills-manage doctor --layer system --dir ~/.skills-manage
 ```
 
 5. 同步系统级 sources：
 
 ```bash
-node packages/cli/dist/index.js sync --layer system --dir ~/.skills-manage
+skills-manage sync --layer system --dir ~/.skills-manage
 ```
 
 6. 启动系统级本地 UI：
 
 ```bash
-node packages/cli/dist/index.js ui --system --dir ~/.skills-manage
+skills-manage ui --system --dir ~/.skills-manage
 ```
 
 系统级 UI 可以修改系统级配置和 skills，但不直接改写云端仓库。需要修改云端时，应切换到云端仓库流程。
@@ -179,7 +181,7 @@ node packages/cli/dist/index.js ui --system --dir ~/.skills-manage
 2. 初始化项目级配置：
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js init-project --dir .
+skills-manage init-project --dir .
 ```
 
 3. 编辑 `skills-project.config.json`，按需配置 `linkedSystem`：
@@ -196,19 +198,19 @@ node /path/to/skills-manage/packages/cli/dist/index.js init-project --dir .
 4. 检查项目级配置和上游关联：
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js doctor --layer project --dir .
+skills-manage doctor --layer project --dir .
 ```
 
 5. 同步项目级 sources：
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js sync --layer project --dir .
+skills-manage sync --layer project --dir .
 ```
 
 6. 启动项目级本地 UI：
 
 ```bash
-node /path/to/skills-manage/packages/cli/dist/index.js ui --project --dir .
+skills-manage ui --project --dir .
 ```
 
 项目级 UI 可以修改当前项目的配置和 skills，但不直接改写系统级或云端配置。需要修改系统级配置时，应切换到系统级 UI。

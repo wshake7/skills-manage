@@ -12,4 +12,5 @@
   - 已完成：cloud/system/project 初始化模板和云端 Actions 模板。
   - 已完成：新增中英双语 README。
   - 已完成：拆分中英文 README，并补充 cloud/system/project 三层安装使用流程。
+  - 已完成：新增本地全局安装脚本，支持 `pnpm global:install` 后直接运行 `skills-manage`。
   - 下一步：把 CLI 初始化改为复制模板文件，并实现本地 Fastify 服务与 React UI 首屏。

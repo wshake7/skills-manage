@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc -b packages/schemas packages/core packages/providers packages/cli packages/local-ui packages/cloud-ui",
     "check": "tsc -b --pretty false packages/schemas packages/core packages/providers packages/cli packages/local-ui packages/cloud-ui",
-    "clean": "pnpm -r exec node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\""
+    "clean": "pnpm -r exec node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
+    "global:install": "pnpm build && node scripts/install-global.mjs",
+    "global:uninstall": "node scripts/uninstall-global.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
