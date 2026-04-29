@@ -2,17 +2,15 @@
 
 三层 UI 联动的 AI Skills 自管理系统。项目目标是让 AI skills 可以在云端、自有电脑的系统级目录、以及单个项目目录之间被显式关联、同步、覆盖和管理。
 
-[English](#english)
+[English](./README.en.md)
 
-## 中文
-
-### 项目愿景
+## 项目愿景
 
 `skills-manage` 是一个可自托管、可本地管理、可项目联动的 AI skills 管理系统。它面向长期使用 AI 助手的人：把 skills 当作可维护资产，而不是散落在不同对话和目录里的临时文件。
 
 系统默认采用显式配置关联，不自动扫描用户电脑上的所有目录。
 
-### 三层模型
+## 三层模型
 
 | 层级 | 标识 | 位置 | UI | 操作能力 | 默认优先级 |
 | --- | --- | --- | --- | --- | --- |
@@ -28,7 +26,7 @@
 
 当同名 skill 同时存在于多个层级时，系统优先使用更高层级的版本，并在 UI 中展示覆盖关系。
 
-### 当前技术栈
+## 当前技术栈
 
 - Node.js + TypeScript
 - pnpm workspace monorepo
@@ -38,7 +36,7 @@
 - Fastify 作为首版本地服务方向
 - GitHub Actions + GitHub Pages 支持云端自管理仓库
 
-### 仓库结构
+## 仓库结构
 
 ```txt
 skills-manage/
@@ -58,7 +56,7 @@ skills-manage/
   requirement.md         # 需求文档
 ```
 
-### 配置文件
+## 配置文件
 
 三层各自拥有独立配置文件：
 
@@ -70,7 +68,152 @@ skills-manage/
 
 所有由本项目自动管理的 skill 都应包含 `skill.manifest.json`，并使用 `managedBy: "skills-manage"` 标识。系统只应自动覆盖或删除由 manifest 标记为本项目管理的 skills。
 
-### CLI 命令
+## 安装与使用流程
+
+### 0. 本地开发安装
+
+当前仓库仍处于 v1 骨架阶段，推荐先用源码方式运行：
+
+```bash
+pnpm install
+pnpm build
+```
+
+本地开发时可以直接运行编译后的 CLI：
+
+```bash
+node packages/cli/dist/index.js --help
+```
+
+后续发布到 npm 后，可使用：
+
+```bash
+npx skills-manage --help
+```
+
+### 1. 云端级：初始化 GitHub 自管理仓库
+
+云端级用于集中维护 cloud skills，并通过 GitHub Actions 自动解析、更新、校验和发布只读 GitHub Pages。
+
+1. 创建一个新的 GitHub 仓库，例如 `owner/skills-cloud`。
+2. 在该仓库工作区初始化云端配置：
+
+```bash
+node packages/cli/dist/index.js init-cloud --dir /path/to/skills-cloud
+```
+
+3. 将模板 workflow 放入云端仓库的 `.github/workflows/`：
+
+```txt
+templates/actions/resolve-sources.yml
+templates/actions/update-skills.yml
+templates/actions/validate-skills.yml
+templates/actions/release-skills.yml
+```
+
+4. 编辑 `skills-cloud.config.json`，配置 sources、provider 和 GitHub Pages 输出目录。
+5. 运行云端检查：
+
+```bash
+node packages/cli/dist/index.js doctor --layer cloud --dir /path/to/skills-cloud
+```
+
+6. 发布云端只读数据：
+
+```bash
+node packages/cli/dist/index.js publish-cloud-ui --dir /path/to/skills-cloud
+```
+
+7. 推送到 GitHub，启用 Actions 与 Pages。
+
+云端 UI 只读，不提供修改 sources、触发 AI 更新或编辑 skills 的入口。写操作应通过仓库、CLI 或 GitHub Actions 流程完成。
+
+### 2. 系统级：初始化本机全局 skills 管理目录
+
+系统级用于管理用户电脑上的全局 skills，并可读取已关联的云端仓库状态。
+
+1. 创建系统级目录，例如 `~/.skills-manage`。
+2. 初始化系统级配置：
+
+```bash
+node packages/cli/dist/index.js init-system --dir ~/.skills-manage
+```
+
+3. 编辑 `~/.skills-manage/skills-system.config.json`，按需配置 `linkedCloud`：
+
+```json
+{
+  "linkedCloud": {
+    "repo": "owner/skills-cloud",
+    "pagesUrl": "https://owner.github.io/skills-cloud",
+    "enabled": true
+  }
+}
+```
+
+4. 检查系统级配置、provider 与云端关联：
+
+```bash
+node packages/cli/dist/index.js doctor --layer system --dir ~/.skills-manage
+```
+
+5. 同步系统级 sources：
+
+```bash
+node packages/cli/dist/index.js sync --layer system --dir ~/.skills-manage
+```
+
+6. 启动系统级本地 UI：
+
+```bash
+node packages/cli/dist/index.js ui --system --dir ~/.skills-manage
+```
+
+系统级 UI 可以修改系统级配置和 skills，但不直接改写云端仓库。需要修改云端时，应切换到云端仓库流程。
+
+### 3. 项目级：初始化当前项目 skills 管理
+
+项目级用于管理某个项目自己的 skills，并可读取系统级与间接云端状态。
+
+1. 进入目标项目目录。
+2. 初始化项目级配置：
+
+```bash
+node /path/to/skills-manage/packages/cli/dist/index.js init-project --dir .
+```
+
+3. 编辑 `skills-project.config.json`，按需配置 `linkedSystem`：
+
+```json
+{
+  "linkedSystem": {
+    "path": "~/.skills-manage",
+    "enabled": true
+  }
+}
+```
+
+4. 检查项目级配置和上游关联：
+
+```bash
+node /path/to/skills-manage/packages/cli/dist/index.js doctor --layer project --dir .
+```
+
+5. 同步项目级 sources：
+
+```bash
+node /path/to/skills-manage/packages/cli/dist/index.js sync --layer project --dir .
+```
+
+6. 启动项目级本地 UI：
+
+```bash
+node /path/to/skills-manage/packages/cli/dist/index.js ui --project --dir .
+```
+
+项目级 UI 可以修改当前项目的配置和 skills，但不直接改写系统级或云端配置。需要修改系统级配置时，应切换到系统级 UI。
+
+## CLI 命令
 
 当前 CLI 已具备首版骨架：
 
@@ -86,14 +229,7 @@ skills-manage ui --system
 skills-manage ui --project
 ```
 
-本地开发时可以直接运行编译后的入口：
-
-```bash
-node packages/cli/dist/index.js init-project --dir ./demo-project
-node packages/cli/dist/index.js doctor --layer project --dir ./demo-project
-```
-
-### 开发
+## 开发
 
 安装依赖：
 
@@ -113,7 +249,7 @@ pnpm check
 pnpm build
 ```
 
-### 当前进度
+## 当前进度
 
 已完成：
 
@@ -131,133 +267,3 @@ pnpm build
 - 实现本地 Fastify 服务
 - 实现 React 本地 UI 首屏
 - 实现 cloud-ui 静态只读页面和数据输出
-
----
-
-## English
-
-### Vision
-
-`skills-manage` is a self-hostable AI skills management system for cloud, system-level, and project-level workflows. It treats skills as durable assets that can be synced, reviewed, overridden, and reused across projects.
-
-The system uses explicit configuration links by default. It does not scan every directory on the user's machine automatically.
-
-### Three-Layer Model
-
-| Layer | ID | Location | UI | Write Access | Default Priority |
-| --- | --- | --- | --- | --- | --- |
-| Cloud | `cloud` | Self-managed GitHub repository | GitHub Pages | Read-only | Lowest |
-| System | `system` | Global directory on the user's machine | Local Web UI | Writable | Middle |
-| Project | `project` | A single project directory | Local Web UI | Writable | Highest |
-
-Default override order:
-
-```txt
-project skills > system skills > cloud skills
-```
-
-When the same skill name exists in multiple layers, the higher-priority layer wins. The UI should make the effective source and override relationship visible.
-
-### Current Stack
-
-- Node.js + TypeScript
-- pnpm workspace monorepo
-- Zod for schema validation
-- Commander for the CLI
-- React + Vite as the planned v1 UI stack
-- Fastify as the planned v1 local service
-- GitHub Actions + GitHub Pages for cloud self-management
-
-### Repository Layout
-
-```txt
-skills-manage/
-  packages/
-    core/                # LayerGraph, resolver, fetcher, sync, manifest logic
-    cli/                 # skills-manage command entry
-    local-ui/            # Writable system/project local UI boundary
-    cloud-ui/            # Read-only GitHub Pages UI boundary
-    providers/           # Codex and DeepSeek provider interface
-    schemas/             # Config, manifest, and source schemas
-  templates/
-    cloud-repo/          # Cloud repository config template
-    project-init/        # Project-level init config template
-    system-init/         # System-level init config template
-    actions/             # GitHub Actions workflow templates
-  memory/                # Project memory, tasks, and work logs
-  requirement.md         # Product requirements
-```
-
-### Configuration Files
-
-Each layer has its own config file:
-
-| File | Layer | Purpose |
-| --- | --- | --- |
-| `skills-cloud.config.json` | `cloud` | Cloud sources, AI provider, Actions, and GitHub Pages output |
-| `skills-system.config.json` | `system` | System skills, linked cloud repository, and local UI permissions |
-| `skills-project.config.json` | `project` | Project skills, linked system workspace, and project-specific sources |
-
-Every skill managed by this project should include `skill.manifest.json` with `managedBy: "skills-manage"`. Automated overwrite and delete operations should only affect skills marked as managed by this project.
-
-### CLI
-
-The first CLI skeleton includes:
-
-```bash
-skills-manage init-cloud
-skills-manage init-system
-skills-manage init-project
-skills-manage doctor --layer project
-skills-manage sync --layer project
-skills-manage ai-update --layer project
-skills-manage publish-cloud-ui
-skills-manage ui --system
-skills-manage ui --project
-```
-
-During local development, run the built CLI entry directly:
-
-```bash
-node packages/cli/dist/index.js init-project --dir ./demo-project
-node packages/cli/dist/index.js doctor --layer project --dir ./demo-project
-```
-
-### Development
-
-Install dependencies:
-
-```bash
-pnpm install
-```
-
-Type-check:
-
-```bash
-pnpm check
-```
-
-Build:
-
-```bash
-pnpm build
-```
-
-### Current Progress
-
-Done:
-
-- pnpm + TypeScript monorepo setup
-- Three-layer config and skill manifest schemas
-- Initial core package for config IO, LayerGraph, resolver, git fetcher, and manifest helpers
-- Codex/DeepSeek provider interface with placeholder implementations
-- Initial CLI command surface
-- local-ui/cloud-ui permission boundary packages
-- cloud/system/project init templates and GitHub Actions templates
-
-Next:
-
-- Make CLI init commands copy template files
-- Implement the local Fastify service
-- Implement the first React local UI screen
-- Implement the cloud-ui static read-only page and data output
