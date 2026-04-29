@@ -68,11 +68,43 @@ skills-manage/
 
 所有由本项目自动管理的 skill 都应包含 `skill.manifest.json`，并使用 `managedBy: "skills-manage"` 标识。系统只应自动覆盖或删除由 manifest 标记为本项目管理的 skills。
 
-## 安装与使用流程
+## Fork-first 使用流程
 
-### 0. 本地开发安装
+这个仓库本身就是云端级自管理仓库模板。最理想的入口不是先在本机安装 CLI 再执行 `init-cloud`，而是：
 
-当前仓库仍处于 v1 骨架阶段，推荐先用源码方式安装到全局：
+```txt
+Fork 本仓库 -> 编辑云端配置 -> 启用 GitHub Actions/Pages -> 本地系统级和项目级按需关联这个 fork
+```
+
+fork 后天然拥有：
+
+- 根目录 `skills-cloud.config.json`
+- 可被 GitHub 直接识别的 `.github/workflows/*`
+- 云端 skills 目录约定 `.agents/skills/`
+- GitHub Pages 静态数据目录 `public/data/`
+- 本地可选 CLI、system layer、project layer 联动能力
+
+### 1. 云端级：直接 Fork 后启用
+
+1. Fork 本仓库到自己的 GitHub 账号或组织，例如 `owner/skills-cloud`。
+2. 在 fork 后的仓库中编辑根目录 `skills-cloud.config.json`，添加 sources、provider 和 Pages 输出配置。
+3. 在 GitHub 仓库设置中启用 Actions。按需配置 provider 所需的 secrets。
+4. 在 GitHub Pages 设置中选择 Actions 或发布分支策略。
+5. 手动运行或等待以下 workflows：
+
+```txt
+.github/workflows/resolve-sources.yml
+.github/workflows/update-skills.yml
+.github/workflows/validate-skills.yml
+.github/workflows/release-skills.yml
+```
+
+这样 fork 出来的仓库就是你的 cloud layer。云端 UI 只读，不提供修改 sources、触发 AI 更新或编辑 skills 的入口；写操作通过仓库提交、CLI 或 GitHub Actions 完成。
+
+### 2. 本地可选：安装 CLI 连接你的云端 fork
+
+当前项目仍处于 v1 骨架阶段。如果需要在本机管理 system/project layer，再从源码安装 CLI：
+
 
 ```bash
 pnpm install
@@ -93,44 +125,21 @@ sm --help
 pnpm global:uninstall
 ```
 
-### 1. 云端级：初始化 GitHub 自管理仓库
+`init-cloud` 仍然保留，但它现在主要用于在其他空仓库里生成同样的 cloud layer 文件；常规路径优先 fork 本仓库。
 
-云端级用于集中维护 cloud skills，并通过 GitHub Actions 自动解析、更新、校验和发布只读 GitHub Pages。
-
-1. 创建一个新的 GitHub 仓库，例如 `owner/skills-cloud`。
-2. 在该仓库工作区初始化云端配置：
+如果你在本地 clone 了自己的 cloud fork，可以检查云端配置：
 
 ```bash
-sm init-cloud --dir /path/to/skills-cloud
+sm doctor --layer cloud --dir .
 ```
 
-3. 将模板 workflow 放入云端仓库的 `.github/workflows/`：
-
-```txt
-templates/actions/resolve-sources.yml
-templates/actions/update-skills.yml
-templates/actions/validate-skills.yml
-templates/actions/release-skills.yml
-```
-
-4. 编辑 `skills-cloud.config.json`，配置 sources、provider 和 GitHub Pages 输出目录。
-5. 运行云端检查：
+也可以本地生成云端只读数据：
 
 ```bash
-sm doctor --layer cloud --dir /path/to/skills-cloud
+sm publish-cloud-ui --dir .
 ```
 
-6. 发布云端只读数据：
-
-```bash
-sm publish-cloud-ui --dir /path/to/skills-cloud
-```
-
-7. 推送到 GitHub，启用 Actions 与 Pages。
-
-云端 UI 只读，不提供修改 sources、触发 AI 更新或编辑 skills 的入口。写操作应通过仓库、CLI 或 GitHub Actions 流程完成。
-
-### 2. 系统级：初始化本机全局 skills 管理目录
+### 3. 系统级：初始化本机全局 skills 管理目录
 
 系统级用于管理用户电脑上的全局 skills，并可读取已关联的云端仓库状态。
 
@@ -174,7 +183,7 @@ sm ui
 
 系统级 UI 可以修改系统级配置和 skills，但不直接改写云端仓库。需要修改云端时，应切换到云端仓库流程。
 
-### 3. 项目级：初始化当前项目 skills 管理
+### 4. 项目级：初始化当前项目 skills 管理
 
 项目级用于管理某个项目自己的 skills，并可读取系统级与间接云端状态。
 

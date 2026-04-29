@@ -68,9 +68,40 @@ Each layer has its own config file:
 
 Every skill managed by this project should include `skill.manifest.json` with `managedBy: "skills-manage"`. Automated overwrite and delete operations should only affect skills marked as managed by this project.
 
-## Installation And Usage
+## Fork-First Usage
 
-### 0. Local Development Setup
+This repository is itself the cloud-layer self-management template. The preferred entry point is not installing the CLI first and then running `init-cloud`; it is:
+
+```txt
+Fork this repository -> edit cloud config -> enable GitHub Actions/Pages -> optionally link local system/project layers to the fork
+```
+
+After forking, the repository already includes:
+
+- Root `skills-cloud.config.json`
+- GitHub-native `.github/workflows/*`
+- Cloud skills directory convention at `.agents/skills/`
+- GitHub Pages static data directory at `public/data/`
+- Optional local CLI, system layer, and project layer integration
+
+### 1. Cloud Layer: Fork And Enable
+
+1. Fork this repository into your GitHub account or organization, for example `owner/skills-cloud`.
+2. Edit the root `skills-cloud.config.json` in the fork to add sources, provider, and Pages output config.
+3. Enable GitHub Actions in the fork. Configure any provider secrets as needed.
+4. Configure GitHub Pages using either Actions or your preferred publishing branch.
+5. Run manually or wait for these workflows:
+
+```txt
+.github/workflows/resolve-sources.yml
+.github/workflows/update-skills.yml
+.github/workflows/validate-skills.yml
+.github/workflows/release-skills.yml
+```
+
+The fork is now your cloud layer. The cloud UI is read-only: it must not expose entry points for editing sources, triggering AI updates, or modifying skills. Writes go through repository commits, the CLI, or GitHub Actions.
+
+### 2. Optional Local Setup: Install The CLI To Link Your Cloud Fork
 
 The repository is currently in the v1 skeleton stage. For now, install the CLI globally from the source checkout:
 
@@ -93,44 +124,21 @@ To remove the global command:
 pnpm global:uninstall
 ```
 
-### 1. Cloud Layer: Initialize A Self-Managed GitHub Repository
+`init-cloud` is still available, but it is now mainly for generating the same cloud-layer files in another empty repository. The normal path is to fork this repository first.
 
-The cloud layer centrally maintains cloud skills and uses GitHub Actions to resolve, update, validate, and publish read-only GitHub Pages data.
-
-1. Create a new GitHub repository, for example `owner/skills-cloud`.
-2. Initialize cloud config in that repository workspace:
+If you clone your cloud fork locally, you can check the cloud config:
 
 ```bash
-sm init-cloud --dir /path/to/skills-cloud
+sm doctor --layer cloud --dir .
 ```
 
-3. Copy workflow templates into `.github/workflows/` in the cloud repository:
-
-```txt
-templates/actions/resolve-sources.yml
-templates/actions/update-skills.yml
-templates/actions/validate-skills.yml
-templates/actions/release-skills.yml
-```
-
-4. Edit `skills-cloud.config.json` to configure sources, provider, and GitHub Pages output.
-5. Check cloud config:
+You can also generate the read-only cloud data locally:
 
 ```bash
-sm doctor --layer cloud --dir /path/to/skills-cloud
+sm publish-cloud-ui --dir .
 ```
 
-6. Publish read-only cloud data:
-
-```bash
-sm publish-cloud-ui --dir /path/to/skills-cloud
-```
-
-7. Push to GitHub and enable Actions and Pages.
-
-The cloud UI is read-only. It must not expose entry points for editing sources, triggering AI updates, or modifying skills. Write operations should go through the repository, CLI, or GitHub Actions flow.
-
-### 2. System Layer: Initialize A Global Skills Workspace
+### 3. System Layer: Initialize A Global Skills Workspace
 
 The system layer manages global skills on the user's machine and can read linked cloud repository status.
 
@@ -174,7 +182,7 @@ The command keeps running and prints a local URL such as `http://localhost:4173`
 
 The system UI can modify system config and system skills, but it must not directly rewrite the cloud repository. To change cloud data, switch to the cloud repository flow.
 
-### 3. Project Layer: Initialize Skills Management In A Project
+### 4. Project Layer: Initialize Skills Management In A Project
 
 The project layer manages skills for one specific project and can read system-level and indirect cloud status.
 

@@ -17,6 +17,7 @@
 
 - 使用技能（skill）时，统一保存在 `.agents/skills/<skill-name>/`，主入口为 `SKILL.md`
 - 用户重视技能的可复用性、持久化和可发现性
+- 用户期望云端能力采用 fork-first：直接 fork 仓库后就拥有 cloud config、GitHub Actions、Pages 数据目录和 skills 目录约定；本地 CLI 安装应是 system/project 联动的可选步骤，而不是云端能力的前置步骤。
 
 ---
 

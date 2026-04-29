@@ -6,7 +6,7 @@
 
 最终目标是形成三层联动能力：
 
-- 云端级：通过 GitHub Actions 定时自我更新 skills，并通过 GitHub Pages 提供只读 UI。
+- 云端级：仓库本身可作为 fork-first 模板；用户直接 fork 后即拥有配置、Actions、Pages 数据目录和 cloud skills 管理约定，并通过 GitHub Actions 定时自我更新 skills，通过 GitHub Pages 提供只读 UI。
 - 系统级：通过本地 CLI 和本地 Web UI 管理用户电脑上的全局 skills。
 - 项目级：通过本地 CLI 和本地 Web UI 管理某个项目自己的 skills，并可联动系统级和云端级。
 
@@ -34,6 +34,9 @@
 
 ```txt
 skills-manage/
+  skills-cloud.config.json  # 根目录 cloud 配置，fork 后直接生效
+  .github/workflows/        # 根目录 GitHub Actions，fork 后直接拥有云端自动化
+  public/data/              # GitHub Pages 静态数据目录
   packages/
     core/                # 三层联动、resolver、fetcher、sync、manifest
     cli/                 # npx/global command
@@ -47,6 +50,14 @@ skills-manage/
     system-init/         # 系统级初始化模板
     actions/             # GitHub Actions 模板
 ```
+
+默认产品入口采用 **fork-first**：
+
+```txt
+Fork 本仓库 -> 编辑 skills-cloud.config.json -> 启用 Actions/Pages -> 按需在本机初始化 system/project 并关联该 fork
+```
+
+`init-cloud` 保留为辅助命令，用于在其他空仓库中生成同样的 cloud layer 文件；但普通用户不应必须先安装本地 CLI 才能拥有云端能力。
 
 `local-ui` 和 `cloud-ui` 可以共享展示组件、类型和 schema，但必须保持权限边界：
 
@@ -324,6 +335,7 @@ v1 不要求完成：
 
 | 场景 | 验收要求 |
 | --- | --- |
+| 云端 Fork | fork 本仓库后无需先运行本地 CLI，即可看到根目录 cloud config、GitHub Actions workflow、Pages 数据目录和 `.agents/skills` 目录约定 |
 | 云端初始化 | `init-cloud` 能生成云端配置、Actions 模板和 GitHub Pages 输出结构 |
 | 系统级初始化 | `init-system` 能生成系统级配置和管理目录 |
 | 项目级初始化 | `init-project` 能在当前项目生成项目级配置 |
