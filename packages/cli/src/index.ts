@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -20,6 +20,7 @@ import { type Layer, configFileName } from "@skills-manage/schemas";
 
 const program = new Command();
 const execFileAsync = promisify(execFile);
+const recentArchiveLimit = 10;
 
 program
   .name("sm")
@@ -116,6 +117,7 @@ program
         ].join("\n")
       });
       const targetDir = resolve(rootDir, config.skillsDir, safePathSegment(result.skillName || skillName));
+      await archiveExistingSkill(rootDir, targetDir, safePathSegment(result.skillName || skillName));
       await writeGeneratedSkillFiles(targetDir, result.files);
 
       const manifest = createManagedManifest({
@@ -216,6 +218,51 @@ async function writeGeneratedSkillFiles(targetDir: string, files: Array<{ path: 
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, file.content, "utf8");
   }
+}
+
+async function archiveExistingSkill(rootDir: string, targetDir: string, skillName: string): Promise<void> {
+  const existing = await stat(targetDir).catch(() => undefined);
+  if (!existing?.isDirectory()) {
+    return;
+  }
+
+  const entries = await readdir(targetDir).catch(() => []);
+  if (entries.length === 0) {
+    return;
+  }
+
+  const archiveRoot = resolve(rootDir, ".agents", "skill-archives", skillName);
+  const recentRoot = join(archiveRoot, "recent");
+  const timestamp = archiveTimestamp();
+  const archiveDir = join(recentRoot, timestamp);
+  await mkdir(recentRoot, { recursive: true });
+  await cp(targetDir, archiveDir, { recursive: true });
+  await rm(targetDir, { recursive: true, force: true });
+  await rotateSkillArchives(archiveRoot, recentRoot);
+  console.log(`Archived previous ${relative(rootDir, targetDir)} to ${relative(rootDir, archiveDir)}.`);
+}
+
+async function rotateSkillArchives(archiveRoot: string, recentRoot: string): Promise<void> {
+  const recentEntries = await readdir(recentRoot, { withFileTypes: true }).catch(() => []);
+  const versions = recentEntries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+    .reverse();
+  const overflow = versions.slice(recentArchiveLimit);
+  if (overflow.length === 0) {
+    return;
+  }
+
+  const olderRoot = join(archiveRoot, "older");
+  await mkdir(olderRoot, { recursive: true });
+  for (const version of overflow) {
+    await rename(join(recentRoot, version), join(olderRoot, version));
+  }
+}
+
+function archiveTimestamp(): string {
+  return new Date().toISOString().replace(/[^0-9a-z]/gi, "-").replace(/-+$/g, "");
 }
 
 async function resolveRemoteHead(url: string): Promise<string> {

@@ -305,6 +305,8 @@ v1 默认使用 git shallow clone/fetch 获取源仓库代码。
 
 云端 Actions 在更新 skills 后，需要生成 GitHub Pages 所需的静态页面和 JSON 数据。
 
+`update-skills.yml` 不能直接把 AI 生成结果推送到主分支。它必须创建更新分支，并通过 pull request 进入仓库；PR 同时作为 GitHub issue 承载 review、讨论和关闭决策。覆盖已有 skill 前，系统必须归档旧版本；每个 skill 的最近 10 个旧版本保留在 `recent` 目录，超过 10 个的更早版本移动到 `older` 目录。
+
 ## 12. 权限边界
 
 | 场景 | 允许 | 不允许 |

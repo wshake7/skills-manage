@@ -105,7 +105,9 @@ fork 后天然拥有：
 | Workflow | 什么时候用 | 做什么 | 需要配置 | 主要产物 |
 | --- | --- | --- | --- | --- |
 | `resolve-sources.yml` | 配置 sources 后，想检查它们能否解析为 GitHub 仓库；也会每天定时运行 | 执行 `node packages/cli/dist/index.js sync --layer cloud --dir .`，解析 `skills-cloud.config.json` 中的 sources | 不需要 AI key；只需要仓库代码和 cloud config | 当前版本输出解析结果到 Actions 日志，后续会写入云端 repo 清单数据 |
-| `update-skills.yml` | 想让云端根据 sources 自动生成或更新 skills；也会每天定时运行 | 执行 `node packages/cli/dist/index.js ai-update --layer cloud --dir .`，检查 provider，解析 sources，并调用 DeepSeek 生成 skill 文件 | 必需 secret：`DEEPSEEK_API_KEY`；可选 variables：`DEEPSEEK_MODEL`、`DEEPSEEK_BASE_URL` | 更新 `.agents/skills/<source-id>/` 下的 `SKILL.md` 和 `skill.manifest.json`；如果有变化会自动提交并推送 |
+| `update-skills.yml` | 想让云端根据 sources 自动生成或更新 skills；也会每天定时运行 | 执行 `node packages/cli/dist/index.js ai-update --layer cloud --dir .`，检查 provider，解析 sources，并调用 DeepSeek 生成 skill 文件 | 必需 secret：`DEEPSEEK_API_KEY`；可选 variables：`DEEPSEEK_MODEL`、`DEEPSEEK_BASE_URL` | 生成更新分支并打开 PR，不直接写入主分支；更新 `.agents/skills/<source-id>/`，旧版本归档到 `.agents/skill-archives/<source-id>/` |
+
+`update-skills.yml` 不会直接把 AI 结果合入主分支。它会创建 `skills-manage/update-<run-id>` 分支并打开 PR；PR 本身也是 GitHub issue，可在 PR 里讨论、review、要求修改或关闭。每次更新已有 skill 前，当前版本会先复制到 `.agents/skill-archives/<source-id>/recent/<timestamp>/`；`recent` 只保留最近 10 个版本，超过 10 个后更早版本会移动到 `.agents/skill-archives/<source-id>/older/`。
 | `validate-skills.yml` | 每次 push 或 PR 自动运行；手动改配置、skill 或 workflow 后用于验收 | 执行 `pnpm check` 和 `node packages/cli/dist/index.js doctor --layer cloud --dir .`，检查 TypeScript、schema、provider 配置和层级图 | 如果 cloud provider 是 DeepSeek，缺少 `DEEPSEEK_API_KEY` 会提示需要配置；本地开发时这是预期提示 | Actions 通过或失败的检查结果 |
 | `release-skills.yml` | 打 tag 或手动发布云端只读数据时运行 | 执行 `node packages/cli/dist/index.js publish-cloud-ui --dir .`，生成 GitHub Pages 需要读取的静态数据 | 需要 GitHub Pages 相关权限；workflow 已声明 `contents: write`、`pages: write`、`id-token: write` | `public/data/skills-manage.json` 和后续 cloud-ui 静态发布产物 |
 
