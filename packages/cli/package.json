@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@skills-manage/core": "workspace:*",
+    "@skills-manage/local-ui": "workspace:*",
     "@skills-manage/providers": "workspace:*",
     "@skills-manage/schemas": "workspace:*",
     "commander": "^12.1.0"

@@ -11,6 +11,7 @@ import {
   resolveSources,
   writeConfig
 } from "@skills-manage/core";
+import { startLocalUiServer } from "@skills-manage/local-ui";
 import { createProvider } from "@skills-manage/providers";
 import { type Layer, configFileName } from "@skills-manage/schemas";
 
@@ -120,12 +121,13 @@ program
   .option("--dir <path>", "Workspace directory")
   .action(async (options: { system?: boolean; project?: boolean; dir?: string }) => {
     const layer: Extract<Layer, "system" | "project"> = options.project ? "project" : "system";
-    const config = await readConfig(configPathFor(rootFor(layer, options.dir), layer));
+    const rootDir = rootFor(layer, options.dir);
+    const config = await readConfig(configPathFor(rootDir, layer));
     if (config.layer === "cloud") {
       throw new Error("Cloud UI is static and must be published with publish-cloud-ui.");
     }
 
-    console.log(`Local UI placeholder for ${config.layer} will listen on ${config.ui.host}:${config.ui.port}.`);
+    await startLocalUiServer({ rootDir, config });
   });
 
 program.parseAsync().catch((error: unknown) => {

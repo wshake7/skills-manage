@@ -170,6 +170,8 @@ sm sync --layer system --dir ~/.skills-manage
 sm ui
 ```
 
+The command keeps running and prints a local URL such as `http://localhost:4173`. Open that URL in a browser to access the system UI. Press `Ctrl+C` to stop the server.
+
 The system UI can modify system config and system skills, but it must not directly rewrite the cloud repository. To change cloud data, switch to the cloud repository flow.
 
 ### 3. Project Layer: Initialize Skills Management In A Project

@@ -170,6 +170,8 @@ sm sync --layer system --dir ~/.skills-manage
 sm ui
 ```
 
+命令启动后会保持运行，并输出本地地址，例如 `http://localhost:4173`。在浏览器打开该地址即可访问系统级 UI；按 `Ctrl+C` 停止服务。
+
 系统级 UI 可以修改系统级配置和 skills，但不直接改写云端仓库。需要修改云端时，应切换到云端仓库流程。
 
 ### 3. 项目级：初始化当前项目 skills 管理

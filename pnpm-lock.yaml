@@ -20,6 +20,9 @@ importers:
       '@skills-manage/core':
         specifier: workspace:*
         version: link:../core
+      '@skills-manage/local-ui':
+        specifier: workspace:*
+        version: link:../local-ui
       '@skills-manage/providers':
         specifier: workspace:*
         version: link:../providers
