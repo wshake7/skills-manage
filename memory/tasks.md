@@ -15,4 +15,5 @@
   - 已完成：新增本地全局安装脚本，支持 `pnpm global:install` 后直接运行 `skills-manage`。
   - 已完成：新增 `sm` 短命令，并让 `sm ui` 默认从 `~/.skills-manage` 启动系统级 UI。
   - 已完成：实现最小可访问本地 UI 服务，`sm ui` 会真正监听 localhost 并提供首页与状态 API。
+  - 已完成：使用 `ui-ux-pro-max` 优化本地 UI 视觉与信息架构。
   - 下一步：把 CLI 初始化改为复制模板文件，并实现本地 Fastify 服务与 React UI 首屏。
