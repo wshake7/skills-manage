@@ -22,5 +22,5 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter skills-manage build
-      - run: pnpm --filter skills-manage exec skills-manage ai-update --layer cloud --dir ../..
+      - run: pnpm build
+      - run: node packages/cli/dist/index.js ai-update --layer cloud --dir .
