@@ -1,7 +1,14 @@
 {
   "version": 1,
   "layer": "cloud",
-  "sources": [],
+  "sources": [
+    {
+      "id": "trpc",
+      "type": "github",
+      "value": "https://github.com/trpc/trpc",
+      "enabled": true
+    }
+  ],
   "provider": "deepseek",
   "skillsDir": ".agents/skills",
   "pages": {
