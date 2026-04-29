@@ -69,6 +69,11 @@ program
     console.log(`Graph: ${graph.nodes.map((node) => node.layer).join(" -> ")}`);
     console.log(`Provider: ${provider.name} (${auth.ok ? "ok" : "needs attention"})`);
     console.log(auth.message);
+    console.log(`Sources: ${config.sources.length} (${sourceModeSummary(config.sources)})`);
+    const runtimeAdapters = config.sources.filter((source) => source.mode === "runtime-adapter");
+    if (runtimeAdapters.length > 0) {
+      console.log(`Runtime adapters: ${runtimeAdapters.map((source) => source.id).join(", ")}`);
+    }
   });
 
 program
@@ -117,6 +122,16 @@ program
         prompt: [
           `Create or update a Codex skill for ${repo.repo}.`,
           "The skill must help an AI coding agent work effectively with this repository or technology.",
+          `Skill sync mode: ${source?.mode ?? "generated"}.`,
+          source?.mode === "runtime-adapter"
+            ? "This is a runtime-adapter skill: document how to use the local MCP/CLI/API runtime first, then describe fallback behavior when the runtime is not configured."
+            : undefined,
+          source?.mode === "vendor"
+            ? "This is a vendor skill: preserve the upstream skill's intent, structure, rules, and assets as much as possible instead of inventing a generic summary."
+            : undefined,
+          source?.runtime
+            ? `Runtime requirements: ${JSON.stringify(source.runtime)}`
+            : undefined,
           "Keep it concise, reusable, and include concrete workflow guidance.",
           context7Reference
             ? [
@@ -125,7 +140,7 @@ program
                 context7Reference
               ].join("\n")
             : "No Context7 reference was available; use the GitHub repository as the primary source."
-        ].join("\n")
+        ].filter(Boolean).join("\n")
       });
       const targetDir = resolve(rootDir, config.skillsDir, safePathSegment(result.skillName || skillName));
       await archiveExistingSkill(rootDir, targetDir, safePathSegment(result.skillName || skillName));
@@ -136,7 +151,9 @@ program
         layer: config.layer,
         sourceRepo: repo.repo,
         sourceCommit: await resolveRemoteHead(repo.url),
-        provider: config.provider
+        provider: config.provider,
+        mode: source?.mode ?? "generated",
+        runtime: source?.runtime
       });
       await writeFile(join(targetDir, "skill.manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
       console.log(`Updated ${relative(rootDir, targetDir)} from ${repo.repo}.`);
@@ -357,6 +374,17 @@ function trimContext7Reference(content: string): string {
   }
 
   return `${content.slice(0, maxContext7ReferenceChars)}\n\n[Context7 reference truncated by skills-manage to keep the provider prompt within a safe size.]`;
+}
+
+function sourceModeSummary(sources: Source[]): string {
+  const counts = new Map<string, number>();
+  for (const source of sources) {
+    counts.set(source.mode, (counts.get(source.mode) ?? 0) + 1);
+  }
+
+  return ["runtime-adapter", "vendor", "generated"]
+    .map((mode) => `${mode}: ${counts.get(mode) ?? 0}`)
+    .join(", ");
 }
 
 function safePathSegment(value: string): string {

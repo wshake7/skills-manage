@@ -43,6 +43,7 @@
 - **Resolver v1**：支持 GitHub URL、`package.json`、`go.mod`，目标是解析出 GitHub 仓库地址，无法解析时记录为 unresolved。
 - **Fetcher v1**：默认使用 git shallow clone/fetch，后续可替换为 GitHub API、压缩包下载或缓存镜像。
 - **云端能力**：GitHub Actions 负责定时/手动 resolve、update、validate、release，并可通过 Context7 refresh workflow 刷新仓库文档索引；GitHub Pages 发布只读 UI 与静态 JSON 数据。
+- **三层联动分工**：cloud 保存默认 skill、来源和上游参考；system 绑定本机 MCP/CLI/API key 等真实运行时；project 只做当前项目最高优先级覆盖。source 使用 `mode` 区分 `runtime-adapter`、`vendor`、`generated`。
 
 ---
 

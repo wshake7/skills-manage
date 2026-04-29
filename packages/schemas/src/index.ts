@@ -6,11 +6,25 @@ export type Layer = z.infer<typeof layerSchema>;
 export const providerNameSchema = z.enum(["codex", "deepseek"]);
 export type ProviderName = z.infer<typeof providerNameSchema>;
 
+export const skillModeSchema = z.enum(["generated", "vendor", "runtime-adapter"]);
+export type SkillMode = z.infer<typeof skillModeSchema>;
+
+export const runtimeRequirementSchema = z.object({
+  preferred: z.array(z.enum(["mcp", "cli", "api", "local"])).default([]),
+  commands: z.array(z.string().min(1)).default([]),
+  env: z.array(z.string().min(1)).default([]),
+  requiresUserSetup: z.boolean().default(false),
+  notes: z.string().min(1).optional()
+});
+export type RuntimeRequirement = z.infer<typeof runtimeRequirementSchema>;
+
 export const sourceSchema = z.object({
   id: z.string().min(1),
   type: z.enum(["github", "package-json", "go-mod"]),
   value: z.string().min(1),
   enabled: z.boolean().default(true),
+  mode: skillModeSchema.default("generated"),
+  runtime: runtimeRequirementSchema.optional(),
   context7: z
     .object({
       prefer: z.boolean().default(true),
@@ -96,6 +110,8 @@ export const skillManifestSchema = z.object({
   sourceRepo: z.string().min(1),
   sourceCommit: z.string().min(1),
   provider: providerNameSchema,
+  mode: skillModeSchema.default("generated"),
+  runtime: runtimeRequirementSchema.optional(),
   generatedAt: z.string().datetime(),
   managedBy: managedBySchema,
   overrides: z.array(skillOverrideSchema).default([])

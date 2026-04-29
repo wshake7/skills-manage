@@ -33,6 +33,8 @@ export function createManagedManifest(input: {
   sourceRepo: string;
   sourceCommit: string;
   provider: "codex" | "deepseek";
+  mode?: SkillManifest["mode"];
+  runtime?: SkillManifest["runtime"];
   overrides?: SkillManifest["overrides"];
 }): SkillManifest {
   return skillManifestSchema.parse({

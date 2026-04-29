@@ -7,6 +7,14 @@
       "type": "github",
       "value": "https://github.com/upstash/context7",
       "enabled": true,
+      "mode": "runtime-adapter",
+      "runtime": {
+        "preferred": ["mcp", "cli"],
+        "commands": ["npx ctx7@latest"],
+        "env": ["CONTEXT7_API_KEY"],
+        "requiresUserSetup": true,
+        "notes": "Prefer Context7 MCP when available; use ctx7 CLI as the fallback path for current documentation."
+      },
       "context7": {
         "libraryId": "/websites/context7",
         "libraryName": "Context7",
@@ -18,6 +26,14 @@
       "type": "github",
       "value": "https://github.com/firecrawl/firecrawl",
       "enabled": true,
+      "mode": "runtime-adapter",
+      "runtime": {
+        "preferred": ["mcp", "api"],
+        "commands": [],
+        "env": ["FIRECRAWL_API_KEY"],
+        "requiresUserSetup": true,
+        "notes": "Prefer installed Firecrawl skills or MCP/API tooling; the cloud skill should describe setup, credentials, and fallbacks."
+      },
       "context7": {
         "libraryId": "/firecrawl/skills",
         "libraryName": "Firecrawl Skills",
@@ -29,6 +45,7 @@
       "type": "github",
       "value": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
       "enabled": true,
+      "mode": "vendor",
       "context7": {
         "libraryId": "/nextlevelbuilder/ui-ux-pro-max-skill",
         "libraryName": "UI UX Pro Max",

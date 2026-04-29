@@ -21,4 +21,5 @@
   - 已完成：云端默认切换为 DeepSeek provider，并通过 GitHub Actions secret/variables 注入 API key、模型和 base URL。
   - 已完成：集成 Context7 GitHub Actions refresh workflow，并同步更新 actions 模板和中英 README。
   - 已完成：让 `ai-update` 优先参考 Context7，并加入 Context7、Firecrawl、ui-ux-pro-max 默认 cloud sources。
+  - 已完成：优化三层联动元数据，source 支持 `mode` / `runtime`，区分云端默认 skill、系统运行时适配和项目覆盖。
   - 下一步：把 CLI 初始化改为复制模板文件，并实现本地 Fastify 服务与 React UI 首屏。

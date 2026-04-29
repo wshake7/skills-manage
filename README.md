@@ -90,6 +90,24 @@ skills-manage/
 
 如果没有配置 `context7.libraryId`，`ai-update` 会用 `npx ctx7@latest library` 尝试自动解析；如果 Context7 不可用或解析失败，会输出 warning 并退回 GitHub 仓库生成。需要禁用某个 source 的 Context7 优先策略时，可设置 `"context7": { "prefer": false }`。
 
+### 三层联动分工
+
+云端、系统级和项目级不是简单复制同一份目录，而是各自承担不同职责：
+
+| 层级 | 主要职责 | 典型内容 |
+| --- | --- | --- |
+| 云端级 | 持久保存默认 skills、来源、版本和上游参考；通过 Actions 感知更新 | 基础 skills、通用技术栈 skills、Context7 参考、Pages 快照 |
+| 系统级 | 绑定本机真实运行时能力，并覆盖或补全云端默认 skill | MCP、CLI、API key、本机全局偏好、运行时适配器 |
+| 项目级 | 针对当前项目做最小覆盖，优先级最高 | 项目专属约定、局部 fork、团队规则 |
+
+source 的 `mode` 用来表达三层联动时的处理方式：
+
+| mode | 用途 | 更新策略 |
+| --- | --- | --- |
+| `runtime-adapter` | Context7、Firecrawl 这类需要 MCP/CLI/API 才完整发挥能力的基础 skill | 云端保存调用规则和降级策略；系统级负责安装、凭证和本地运行时检测 |
+| `vendor` | 已经存在成熟 skill 的来源，例如 ui-ux-pro-max | 优先保留上游 skill 的结构、规则和资产，避免改写成泛化摘要 |
+| `generated` | 没有现成 skill 的技术或框架，例如 tRPC、Spring Boot | 优先参考 Context7，再结合 GitHub 仓库生成可维护 skill |
+
 ## Fork-first 使用流程
 
 这个仓库本身就是云端级自管理仓库模板。最理想的入口不是先在本机安装 CLI 再执行 `init-cloud`，而是：

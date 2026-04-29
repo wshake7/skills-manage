@@ -90,6 +90,24 @@ Each source can declare its Context7 reference:
 
 When `context7.libraryId` is not configured, `ai-update` tries to resolve one with `npx ctx7@latest library`. If Context7 is unavailable or cannot resolve a match, the workflow logs a warning and falls back to GitHub-based generation. Set `"context7": { "prefer": false }` to disable Context7-first behavior for a source.
 
+### Three-Layer Responsibilities
+
+Cloud, system, and project layers do not simply copy the same directory. They have different responsibilities:
+
+| Layer | Main responsibility | Typical contents |
+| --- | --- | --- |
+| Cloud | Persist default skills, sources, versions, and upstream references; detect updates through Actions | Foundational skills, common framework skills, Context7 references, Pages snapshots |
+| System | Bind real local runtime capabilities and override or complete cloud defaults | MCP, CLI, API keys, machine-wide preferences, runtime adapters |
+| Project | Apply minimal project-specific overrides with the highest priority | Project conventions, local forks, team rules |
+
+Each source has a `mode` that guides three-layer sync:
+
+| mode | Purpose | Update strategy |
+| --- | --- | --- |
+| `runtime-adapter` | Foundational skills such as Context7 and Firecrawl that need MCP/CLI/API runtime support to be fully useful | Cloud stores usage and fallback rules; system handles installation, credentials, and local runtime checks |
+| `vendor` | Sources that already provide a mature skill, such as ui-ux-pro-max | Preserve upstream skill structure, rules, and assets instead of rewriting them into a generic summary |
+| `generated` | Technologies or frameworks without an existing skill, such as tRPC or Spring Boot | Prefer Context7, then combine it with GitHub repository context to generate a maintainable skill |
+
 ## Fork-First Usage
 
 This repository is itself the cloud-layer self-management template. The preferred entry point is not installing the CLI first and then running `init-cloud`; it is:

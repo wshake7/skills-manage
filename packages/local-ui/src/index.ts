@@ -113,7 +113,9 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
       (source) => `<tr>
         <td><span class="mono">${escapeHtml(source.id)}</span></td>
         <td><span class="pill">${escapeHtml(source.type)}</span></td>
+        <td><span class="pill mode">${escapeHtml(source.mode)}</span></td>
         <td class="truncate" title="${escapeHtml(source.value)}">${escapeHtml(source.value)}</td>
+        <td class="truncate" title="${escapeHtml(source.runtime?.preferred.join(", ") ?? "none")}">${escapeHtml(source.runtime?.preferred.join(", ") ?? "none")}</td>
         <td><span class="status ${source.enabled ? "ok" : "paused"}">${source.enabled ? "Enabled" : "Paused"}</span></td>
       </tr>`
     )
@@ -448,6 +450,10 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
         background: var(--indigo-soft);
         color: var(--indigo);
       }
+      .pill.mode {
+        background: var(--teal-soft);
+        color: #0b4944;
+      }
       .status.ok {
         background: var(--teal-soft);
         color: #0b4944;
@@ -612,7 +618,9 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
                         <tr>
                           <th style="width: 24%">ID</th>
                           <th style="width: 18%">Type</th>
+                          <th style="width: 150px">Mode</th>
                           <th>Value</th>
+                          <th style="width: 150px">Runtime</th>
                           <th style="width: 110px">State</th>
                         </tr>
                       </thead>
