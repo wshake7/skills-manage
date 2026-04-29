@@ -111,7 +111,13 @@ fork 后天然拥有：
 
 `update-skills.yml` 不会直接把 AI 结果合入主分支。它会创建 `skills-manage/update-<run-id>` 分支并打开 PR；PR 本身也是 GitHub issue，可在 PR 里讨论、review、要求修改或关闭。每次更新已有 skill 前，当前版本会先复制到 `.agents/skill-archives/<source-id>/recent/<timestamp>/`；`recent` 只保留最近 10 个版本，超过 10 个后更早版本会移动到 `.agents/skill-archives/<source-id>/older/`。
 
-如果 Actions 日志里出现 `GitHub Actions is not permitted to create or approve pull requests`，说明仓库设置禁止默认 `GITHUB_TOKEN` 创建 PR。可以在仓库 Settings → Actions → General 中启用 `Allow GitHub Actions to create and approve pull requests`，或添加 fine-grained PAT secret `SKILLS_MANAGE_PR_TOKEN`，权限至少包含当前仓库的 Contents: Read and write、Pull requests: Read and write。即使 PR 创建失败，workflow 也会保留已推送的更新分支，并在日志中输出手动创建 PR 的链接。
+如果 Actions 日志里出现 `GitHub Actions is not permitted to create or approve pull requests`，说明仓库设置禁止默认 `GITHUB_TOKEN` 创建 PR。按下面步骤处理：
+
+1. 先处理本次已经生成的更新：日志里会有 `Create a pull request for '<branch>'` 或 `Open the PR manually` 链接，打开该链接手动创建 PR。此时更新分支已经 push 成功，生成的 skill 结果不会丢失。
+2. 推荐做法：进入仓库 `Settings` → `Actions` → `General` → `Workflow permissions`，选择 `Read and write permissions`，并勾选 `Allow GitHub Actions to create and approve pull requests`，保存后重新运行 `Update skills` workflow。
+3. 备用做法：如果不想允许默认 `GITHUB_TOKEN` 创建 PR，创建一个 fine-grained personal access token，Repository access 选择当前仓库，权限至少包含 `Contents: Read and write` 和 `Pull requests: Read and write`。
+4. 将该 token 添加到仓库 `Settings` → `Secrets and variables` → `Actions` → `New repository secret`，名称必须是 `SKILLS_MANAGE_PR_TOKEN`。
+5. 重新运行 `Update skills` workflow。workflow 会优先使用 `SKILLS_MANAGE_PR_TOKEN`；如果没有配置，则使用默认 `GITHUB_TOKEN`。
 
 这样 fork 出来的仓库就是你的 cloud layer。云端 UI 只读，不提供修改 sources、触发 AI 更新或编辑 skills 的入口；写操作通过仓库提交、CLI 或 GitHub Actions 完成。
 

@@ -111,7 +111,13 @@ After forking, the repository already includes:
 
 `update-skills.yml` does not merge AI output directly into the base branch. It creates a `skills-manage/update-<run-id>` branch and opens a PR; a PR is also a GitHub issue, so review and discussion happen there before merging. Before replacing an existing skill, the current version is copied to `.agents/skill-archives/<source-id>/recent/<timestamp>/`. `recent` keeps the latest 10 versions; older versions are moved to `.agents/skill-archives/<source-id>/older/`.
 
-If the Actions log says `GitHub Actions is not permitted to create or approve pull requests`, the repository blocks the default `GITHUB_TOKEN` from creating PRs. Enable `Allow GitHub Actions to create and approve pull requests` under Settings → Actions → General, or add a fine-grained PAT secret named `SKILLS_MANAGE_PR_TOKEN` with at least Contents: Read and write and Pull requests: Read and write for this repository. If PR creation still fails, the workflow keeps the pushed update branch and prints a manual PR link in the log.
+If the Actions log says `GitHub Actions is not permitted to create or approve pull requests`, the repository blocks the default `GITHUB_TOKEN` from creating PRs. Use these steps:
+
+1. Handle the current generated update first: the log prints a `Create a pull request for '<branch>'` or `Open the PR manually` link. Open that link and create the PR manually. The update branch has already been pushed, so the generated skill output is not lost.
+2. Recommended fix: open repository `Settings` → `Actions` → `General` → `Workflow permissions`, select `Read and write permissions`, enable `Allow GitHub Actions to create and approve pull requests`, save, then rerun the `Update skills` workflow.
+3. Alternative fix: if you do not want the default `GITHUB_TOKEN` to create PRs, create a fine-grained personal access token. Set Repository access to this repository and grant at least `Contents: Read and write` and `Pull requests: Read and write`.
+4. Add that token under repository `Settings` → `Secrets and variables` → `Actions` → `New repository secret`. The secret name must be `SKILLS_MANAGE_PR_TOKEN`.
+5. Rerun the `Update skills` workflow. The workflow prefers `SKILLS_MANAGE_PR_TOKEN` when it exists; otherwise it uses the default `GITHUB_TOKEN`.
 
 The fork is now your cloud layer. The cloud UI is read-only: it must not expose entry points for editing sources, triggering AI updates, or modifying skills. Writes go through repository commits, the CLI, or GitHub Actions.
 
