@@ -471,25 +471,23 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
       .definition-row strong {
         overflow-wrap: anywhere;
       }
-      .endpoint-list {
+      .guardrails {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
-      .endpoint {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
+      .guardrail {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 10px;
-        text-decoration: none;
-        transition: border-color 180ms ease, background 180ms ease;
+        padding: 11px;
+        background: #fbfcfb;
       }
-      .endpoint:hover,
-      .endpoint:focus-visible {
-        border-color: var(--teal);
-        background: #f8fbfa;
-        outline: none;
+      .guardrail strong {
+        display: block;
+        margin-bottom: 3px;
       }
       .icon {
         width: 18px;
@@ -557,14 +555,6 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
             ${iconDashboard()}
             <span>Overview</span>
           </a>
-          <a class="nav-item" href="/api/status">
-            ${iconDatabase()}
-            <span>Status API</span>
-          </a>
-          <a class="nav-item" href="/health">
-            ${iconPulse()}
-            <span>Health</span>
-          </a>
         </nav>
         <div class="workspace">
           <span>Workspace</span>
@@ -580,10 +570,6 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
             </div>
             <h1>${escapeHtml(title)}</h1>
             <p class="muted">Started ${escapeHtml(options.startedAt)}</p>
-          </div>
-          <div class="toolbar" aria-label="Quick links">
-            <a class="button" href="/health">${iconPulse()} Health</a>
-            <a class="button primary" href="/api/status">${iconDatabase()} Status JSON</a>
           </div>
         </header>
         <section class="metrics" aria-label="Summary metrics">
@@ -678,17 +664,23 @@ function renderIndexHtml(options: StartLocalUiServerOptions & {
             </section>
             <section class="panel">
               <div class="panel-header">
-                <h2>Endpoints</h2>
+                <h2>Runtime Guardrails</h2>
               </div>
-              <div class="panel-body endpoint-list">
-                <a class="endpoint" href="/health">
-                  <span>${iconPulse()} Health</span>
-                  <span class="muted">JSON</span>
-                </a>
-                <a class="endpoint" href="/api/status">
-                  <span>${iconDatabase()} Status</span>
-                  <span class="muted">JSON</span>
-                </a>
+              <div class="panel-body guardrails">
+                <div class="guardrail">
+                  ${iconPulse()}
+                  <div>
+                    <strong>Local only</strong>
+                    <p class="muted">The UI listens on localhost and stays on this machine.</p>
+                  </div>
+                </div>
+                <div class="guardrail">
+                  ${iconDatabase()}
+                  <div>
+                    <strong>Scoped writes</strong>
+                    <p class="muted">Actions are limited to the current writable layer.</p>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
