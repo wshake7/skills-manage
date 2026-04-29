@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "layer": "system",
+  "sources": [],
+  "provider": "codex",
+  "skillsDir": ".agents/skills",
+  "ui": {
+    "host": "localhost",
+    "port": 4173
+  }
+}

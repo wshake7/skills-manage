@@ -1,0 +1,24 @@
+name: Update skills
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 2 * * *"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter skills-manage build
+      - run: pnpm --filter skills-manage exec skills-manage ai-update --layer cloud
