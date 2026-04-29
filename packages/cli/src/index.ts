@@ -17,11 +17,12 @@ import {
 } from "@skills-manage/core";
 import { startLocalUiServer } from "@skills-manage/local-ui";
 import { createProvider } from "@skills-manage/providers";
-import { type Layer, configFileName } from "@skills-manage/schemas";
+import { type Layer, type ResolvedRepo, type Source, configFileName } from "@skills-manage/schemas";
 
 const program = new Command();
 const execFileAsync = promisify(execFile);
 const recentArchiveLimit = 10;
+const maxContext7ReferenceChars = 24_000;
 
 program
   .name("sm")
@@ -108,13 +109,22 @@ program
 
     for (const repo of resolved.repos) {
       const skillName = safePathSegment(repo.sourceId);
+      const source = config.sources.find((item) => item.id === repo.sourceId);
+      const context7Reference = source ? await fetchContext7Reference(source, repo) : undefined;
       const result = await provider.generateSkill({
         skillName,
         sourcePath: repo.resolvedFrom,
         prompt: [
           `Create or update a Codex skill for ${repo.repo}.`,
           "The skill must help an AI coding agent work effectively with this repository or technology.",
-          "Keep it concise, reusable, and include concrete workflow guidance."
+          "Keep it concise, reusable, and include concrete workflow guidance.",
+          context7Reference
+            ? [
+                "Prefer the following Context7-provided reference over raw GitHub repository inference.",
+                "Use the GitHub repository as supporting context only when the Context7 reference is incomplete.",
+                context7Reference
+              ].join("\n")
+            : "No Context7 reference was available; use the GitHub repository as the primary source."
         ].join("\n")
       });
       const targetDir = resolve(rootDir, config.skillsDir, safePathSegment(result.skillName || skillName));
@@ -291,6 +301,62 @@ async function resolveRemoteHead(url: string): Promise<string> {
   } catch {
     return "unknown";
   }
+}
+
+async function fetchContext7Reference(source: Source, repo: ResolvedRepo): Promise<string | undefined> {
+  if (source.context7?.prefer === false) {
+    return undefined;
+  }
+
+  const query =
+    source.context7?.query ??
+    `Create or update a Codex skill for ${repo.repo}. Prefer official installation, runtime setup, MCP/CLI/API usage, and agent workflow guidance.`;
+
+  try {
+    const context7 = source.context7;
+    const libraryId = context7?.libraryId ?? (await resolveContext7LibraryId(source, repo, query));
+    if (!libraryId) {
+      return undefined;
+    }
+
+    const docs = trimContext7Reference(await runContext7(["docs", libraryId, query]));
+    return [
+      `Context7 library ID: ${libraryId}`,
+      docs
+    ].join("\n\n");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown Context7 error";
+    console.warn(`Context7 reference unavailable for ${source.id}: ${message}`);
+    return undefined;
+  }
+}
+
+async function resolveContext7LibraryId(
+  source: Source,
+  repo: ResolvedRepo,
+  query: string
+): Promise<string | undefined> {
+  const libraryName = source.context7?.libraryName ?? repo.repo.split("/").at(-1) ?? source.id;
+  const output = await runContext7(["library", libraryName, query]);
+  const match = output.match(/Context7-compatible library ID:\s*(\/[^\s]+)/);
+  return match?.[1];
+}
+
+async function runContext7(args: string[]): Promise<string> {
+  const command = process.platform === "win32" ? "npx.cmd" : "npx";
+  const { stdout, stderr } = await execFileAsync(command, ["ctx7@latest", ...args], {
+    timeout: 120_000,
+    maxBuffer: 5 * 1024 * 1024
+  });
+  return [stdout, stderr].filter(Boolean).join("\n").trim();
+}
+
+function trimContext7Reference(content: string): string {
+  if (content.length <= maxContext7ReferenceChars) {
+    return content;
+  }
+
+  return `${content.slice(0, maxContext7ReferenceChars)}\n\n[Context7 reference truncated by skills-manage to keep the provider prompt within a safe size.]`;
 }
 
 function safePathSegment(value: string): string {

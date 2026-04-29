@@ -10,7 +10,15 @@ export const sourceSchema = z.object({
   id: z.string().min(1),
   type: z.enum(["github", "package-json", "go-mod"]),
   value: z.string().min(1),
-  enabled: z.boolean().default(true)
+  enabled: z.boolean().default(true),
+  context7: z
+    .object({
+      prefer: z.boolean().default(true),
+      libraryId: z.string().regex(/^\/[^/\s]+\/[^/\s]+(?:\/[^/\s]+)?$/).optional(),
+      libraryName: z.string().min(1).optional(),
+      query: z.string().min(1).optional()
+    })
+    .optional()
 });
 export type Source = z.infer<typeof sourceSchema>;
 

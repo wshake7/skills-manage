@@ -1,7 +1,41 @@
 {
   "version": 1,
   "layer": "cloud",
-  "sources": [],
+  "sources": [
+    {
+      "id": "context7",
+      "type": "github",
+      "value": "https://github.com/upstash/context7",
+      "enabled": true,
+      "context7": {
+        "libraryId": "/websites/context7",
+        "libraryName": "Context7",
+        "query": "Create or update a Codex skill for Context7. Prefer official installation, MCP/CLI setup, GitHub Actions integration, and agent workflow guidance."
+      }
+    },
+    {
+      "id": "firecrawl",
+      "type": "github",
+      "value": "https://github.com/firecrawl/firecrawl",
+      "enabled": true,
+      "context7": {
+        "libraryId": "/firecrawl/skills",
+        "libraryName": "Firecrawl Skills",
+        "query": "Create or update a Codex skill for Firecrawl. Prefer official Firecrawl skills, MCP/CLI/API setup, API key requirements, and agent workflow guidance."
+      }
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "type": "github",
+      "value": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "enabled": true,
+      "context7": {
+        "libraryId": "/nextlevelbuilder/ui-ux-pro-max-skill",
+        "libraryName": "UI UX Pro Max",
+        "query": "Create or update a Codex skill for ui-ux-pro-max. Prefer the existing skill content, design workflow rules, and agent usage guidance."
+      }
+    }
+  ],
   "provider": "deepseek",
   "skillsDir": ".agents/skills",
   "pages": {

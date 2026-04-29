@@ -68,6 +68,28 @@ skills-manage/
 
 所有由本项目自动管理的 skill 都应包含 `skill.manifest.json`，并使用 `managedBy: "skills-manage"` 标识。系统只应自动覆盖或删除由 manifest 标记为本项目管理的 skills。
 
+### Context7 优先参考
+
+云端 `ai-update` 会优先尝试通过 Context7 获取当前 source 的高质量参考，再把 GitHub 仓库作为补充材料交给 AI provider。这样既能把 Context7、Firecrawl、ui-ux-pro-max 这类基础能力放进云端默认 skills，又不会把 MCP、CLI、API 等运行时能力退化成静态摘要。
+
+每个 source 都可以按需声明 Context7 参考：
+
+```json
+{
+  "id": "firecrawl",
+  "type": "github",
+  "value": "https://github.com/firecrawl/firecrawl",
+  "enabled": true,
+  "context7": {
+    "libraryId": "/firecrawl/skills",
+    "libraryName": "Firecrawl Skills",
+    "query": "Create or update a Codex skill for Firecrawl."
+  }
+}
+```
+
+如果没有配置 `context7.libraryId`，`ai-update` 会用 `npx ctx7@latest library` 尝试自动解析；如果 Context7 不可用或解析失败，会输出 warning 并退回 GitHub 仓库生成。需要禁用某个 source 的 Context7 优先策略时，可设置 `"context7": { "prefer": false }`。
+
 ## Fork-first 使用流程
 
 这个仓库本身就是云端级自管理仓库模板。最理想的入口不是先在本机安装 CLI 再执行 `init-cloud`，而是：

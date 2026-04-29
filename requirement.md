@@ -244,6 +244,8 @@ provider 接口需要覆盖：
 - skill 生成或更新结果输出。
 - 错误信息标准化。
 
+当 source 能解析为 GitHub 仓库时，更新流程应默认优先尝试获取 Context7 参考资料，再调用 AI provider 生成 skill。Context7 参考可通过 source 的 `context7.libraryId` 显式指定；未指定时可用 `npx ctx7@latest library` 自动解析。Context7 获取失败不得阻断更新，应记录 warning 并退回 GitHub 仓库原始信息。已有成熟 skill 的来源应优先参考 Context7/官方 skill 内容，而不是仅从 GitHub 地址做泛化总结。
+
 后续可扩展 provider：
 
 - OpenAI

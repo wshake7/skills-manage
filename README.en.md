@@ -68,6 +68,28 @@ Each layer has its own config file:
 
 Every skill managed by this project should include `skill.manifest.json` with `managedBy: "skills-manage"`. Automated overwrite and delete operations should only affect skills marked as managed by this project.
 
+### Context7-Preferred References
+
+Cloud `ai-update` first tries to fetch a higher-quality Context7 reference for each source, then uses the GitHub repository as supporting material for the AI provider. This lets the cloud layer include default foundational skills such as Context7, Firecrawl, and ui-ux-pro-max without degrading MCP, CLI, API, or other runtime capabilities into a static summary.
+
+Each source can declare its Context7 reference:
+
+```json
+{
+  "id": "firecrawl",
+  "type": "github",
+  "value": "https://github.com/firecrawl/firecrawl",
+  "enabled": true,
+  "context7": {
+    "libraryId": "/firecrawl/skills",
+    "libraryName": "Firecrawl Skills",
+    "query": "Create or update a Codex skill for Firecrawl."
+  }
+}
+```
+
+When `context7.libraryId` is not configured, `ai-update` tries to resolve one with `npx ctx7@latest library`. If Context7 is unavailable or cannot resolve a match, the workflow logs a warning and falls back to GitHub-based generation. Set `"context7": { "prefer": false }` to disable Context7-first behavior for a source.
+
 ## Fork-First Usage
 
 This repository is itself the cloud-layer self-management template. The preferred entry point is not installing the CLI first and then running `init-cloud`; it is:

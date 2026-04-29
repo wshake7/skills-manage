@@ -39,6 +39,7 @@
 - **UI**：`packages/local-ui` 和 `packages/cloud-ui` 分离；本地 UI 支持系统级/项目级写操作，云端 UI 仅面向 GitHub Pages 静态只读展示。首版 UI 框架暂定 React + Vite。
 - **本地服务**：本地 UI 默认只监听 `localhost`，通过本地服务调用核心能力；首版服务框架暂定 Fastify。
 - **AI Provider**：`packages/providers` 通过统一接口接入 Codex、DeepSeek，后续可扩展 OpenAI、Claude、本地模型或企业网关。
+- **Context7 优先**：GitHub source 更新 skill 时默认先尝试 Context7 参考；Context7 不可用时才退回 GitHub 仓库原始信息，避免基础工具 skill 退化为静态摘要。
 - **Resolver v1**：支持 GitHub URL、`package.json`、`go.mod`，目标是解析出 GitHub 仓库地址，无法解析时记录为 unresolved。
 - **Fetcher v1**：默认使用 git shallow clone/fetch，后续可替换为 GitHub API、压缩包下载或缓存镜像。
 - **云端能力**：GitHub Actions 负责定时/手动 resolve、update、validate、release，并可通过 Context7 refresh workflow 刷新仓库文档索引；GitHub Pages 发布只读 UI 与静态 JSON 数据。
