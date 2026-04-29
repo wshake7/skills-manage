@@ -296,6 +296,13 @@ v1 默认使用 git shallow clone/fetch 获取源仓库代码。
 | `validate-skills.yml` | PR/push | 校验 manifest、目录结构、重复 skill、schema |
 | `release-skills.yml` | tag/manual | 发布可被本地 CLI 同步的 skills 快照 |
 
+每个 workflow 必须在 README 中说明：
+
+- 适用场景：用户什么时候应该手动运行，什么时候等待自动触发。
+- 执行行为：实际调用的 CLI 命令和作用边界。
+- 配置需求：需要哪些 secrets、variables 或 GitHub 权限。
+- 输出结果：写入哪些文件、发布哪些数据，或当前阶段仅输出到 Actions 日志。
+
 云端 Actions 在更新 skills 后，需要生成 GitHub Pages 所需的静态页面和 JSON 数据。
 
 ## 12. 权限边界
