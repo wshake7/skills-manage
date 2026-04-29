@@ -24,3 +24,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: node packages/cli/dist/index.js ai-update --layer cloud --dir .
+      - name: Commit generated skills
+        run: |
+          if [ -z "$(git status --porcelain -- .agents/skills)" ]; then
+            echo "No generated skill changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .agents/skills
+          git commit -m "Update generated skills"
+          git push

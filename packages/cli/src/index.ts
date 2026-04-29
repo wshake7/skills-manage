@@ -1,11 +1,14 @@
 #!/usr/bin/env node
+import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import { promisify } from "node:util";
 import { Command, Option } from "commander";
 import {
   buildLayerGraph,
   configPathFor,
+  createManagedManifest,
   defaultConfig,
   readConfig,
   resolveSources,
@@ -16,6 +19,7 @@ import { createProvider } from "@skills-manage/providers";
 import { type Layer, configFileName } from "@skills-manage/schemas";
 
 const program = new Command();
+const execFileAsync = promisify(execFile);
 
 program
   .name("sm")
@@ -82,14 +86,48 @@ program
   .addOption(layerOption())
   .option("--dir <path>", "Workspace directory", ".")
   .action(async (options: { layer: Layer; dir: string }) => {
-    const config = await readConfig(configPathFor(resolve(options.dir), options.layer));
+    const rootDir = resolve(options.dir);
+    const config = await readConfig(configPathFor(rootDir, options.layer));
     const provider = createProvider(config.provider);
     const check = await provider.checkAuth();
     if (!check.ok) {
       throw new Error(check.message);
     }
 
-    console.log(`Provider ${provider.name} is ready. Skill generation will be implemented in the next iteration.`);
+    const resolved = await resolveSources(config.sources, rootDir);
+    for (const unresolved of resolved.unresolved) {
+      console.warn(`Skipped ${unresolved.sourceId}: ${unresolved.reason}`);
+    }
+
+    if (resolved.repos.length === 0) {
+      console.log("No enabled sources resolved to repositories.");
+      return;
+    }
+
+    for (const repo of resolved.repos) {
+      const skillName = safePathSegment(repo.sourceId);
+      const result = await provider.generateSkill({
+        skillName,
+        sourcePath: repo.resolvedFrom,
+        prompt: [
+          `Create or update a Codex skill for ${repo.repo}.`,
+          "The skill must help an AI coding agent work effectively with this repository or technology.",
+          "Keep it concise, reusable, and include concrete workflow guidance."
+        ].join("\n")
+      });
+      const targetDir = resolve(rootDir, config.skillsDir, safePathSegment(result.skillName || skillName));
+      await writeGeneratedSkillFiles(targetDir, result.files);
+
+      const manifest = createManagedManifest({
+        name: result.skillName || skillName,
+        layer: config.layer,
+        sourceRepo: repo.repo,
+        sourceCommit: await resolveRemoteHead(repo.url),
+        provider: config.provider
+      });
+      await writeFile(join(targetDir, "skill.manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+      console.log(`Updated ${relative(rootDir, targetDir)} from ${repo.repo}.`);
+    }
   });
 
 program
@@ -163,4 +201,36 @@ function rootFor(layer: Layer, dir?: string): string {
   }
 
   return resolve(".");
+}
+
+async function writeGeneratedSkillFiles(targetDir: string, files: Array<{ path: string; content: string }>): Promise<void> {
+  await mkdir(targetDir, { recursive: true });
+
+  for (const file of files) {
+    const filePath = resolve(targetDir, file.path);
+    const relativePath = relative(targetDir, filePath);
+    if (relativePath.startsWith("..") || resolve(relativePath) === relativePath) {
+      throw new Error(`Generated file path escapes skill directory: ${file.path}`);
+    }
+
+    await mkdir(dirname(filePath), { recursive: true });
+    await writeFile(filePath, file.content, "utf8");
+  }
+}
+
+async function resolveRemoteHead(url: string): Promise<string> {
+  try {
+    const { stdout } = await execFileAsync("git", ["ls-remote", url, "HEAD"]);
+    return stdout.trim().split(/\s+/)[0] || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+function safePathSegment(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "skill";
 }

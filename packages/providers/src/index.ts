@@ -139,7 +139,20 @@ function parseSkillGenerationResult(content: string, fallbackSkillName: string):
   const jsonText = trimmed.startsWith("```")
     ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")
     : trimmed;
-  const parsed = JSON.parse(jsonText) as SkillGenerationResult;
+  let parsed: SkillGenerationResult;
+  try {
+    parsed = JSON.parse(jsonText) as SkillGenerationResult;
+  } catch {
+    return {
+      skillName: fallbackSkillName,
+      files: [
+        {
+          path: "SKILL.md",
+          content: `${trimmed}\n`
+        }
+      ]
+    };
+  }
 
   if (!parsed.skillName) {
     parsed.skillName = fallbackSkillName;
