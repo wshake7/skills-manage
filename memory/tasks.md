@@ -10,4 +10,5 @@
   - 已完成：CLI 首版命令入口：`init-cloud`、`init-system`、`init-project`、`doctor`、`sync`、`ai-update`、`publish-cloud-ui`、`ui`。
   - 已完成：local-ui/cloud-ui 权限边界占位包。
   - 已完成：cloud/system/project 初始化模板和云端 Actions 模板。
+  - 已完成：新增中英双语 README。
   - 下一步：把 CLI 初始化改为复制模板文件，并实现本地 Fastify 服务与 React UI 首屏。
