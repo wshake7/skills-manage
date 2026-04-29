@@ -1,56 +1,83 @@
-# tRPC Skill for AI Coding Agents
+# tRPC Monorepo Skill
 
 ## Overview
-tRPC is a TypeScript framework for building end-to-end typesafe APIs. It uses a single source of truth for types via Zod or custom validation, enabling automatic type inference on the client. The repository is a monorepo managed with pnpm and Turborepo.
-
-## Key Packages
-- `packages/server` - Core server library (`@trpc/server`). Contains router creation, procedure builders, middleware system.
-- `packages/client` - Vanilla client (`@trpc/client`). Links, transformers, subscription support.
-- `packages/next` - Next.js integration (`@trpc/next`). App Router and Pages Router adapters.
-- `packages/react-query` - React Query bindings (`@trpc/react-query`). Hooks for queries, mutations, subscriptions.
-- `packages/playground` - A visual API explorer (`@trpc/playground`).
-- `packages/tests` - E2E test suites across adapters.
+This skill helps an AI coding agent work effectively with the [tRPC](https://github.com/trpc/trpc) repository—a TypeScript-first RPC framework. The codebase is a pnpm monorepo with Turborepo orchestration, using Changesets for versioning and release.
 
 ## Repository Structure
-- Root is a pnpm workspace. `pnpm-workspace.yaml` defines packages.
-- `scripts` - Code generation, release scripts.
-- `examples` - Various integration examples (Express, Next.js, standalone, etc.).
-- `www` - Documentation website (Docusaurus).
+- `packages/` – Core packages (`server`, `client`, `react-query`, `next`, `next`, `playground`, etc.)
+- `www/` – Documentation site (Docusaurus)
+- `examples/` – Full-stack example projects
+- `scripts/` – Build and maintenance scripts
+- `tooling/` – Shared configurations (ESLint, Prettier, TypeScript)
+- Root config files: `turbo.json`, `pnpm-workspace.yaml`, `.changeset/`
 
-## Development Workflow
-1. **Setup**: `pnpm install` at root.
-2. **Build**: `pnpm build` compiles all packages. Use `pnpm dev` for watch mode.
-3. **Testing**: 
-   - Unit tests: `pnpm test` (Jest).
-   - E2E tests: `cd packages/tests && pnpm test:e2e` (may require building).
-4. **Linting**: `pnpm lint` (ESLint + Prettier).
-5. **Adding a new package**: Create folder under `packages/`, add `package.json`, ensure `tsconfig.json` extends root, update `pnpm-workspace.yaml` if needed.
-6. **Making changes**: Always run `pnpm build` before submitting PRs. The CI checks build, lint, and test.
+## Development Environment Setup
+1. Clone and install: `git clone https://github.com/trpc/trpc.git && cd trpc && pnpm install`
+2. Build all packages: `pnpm build` (or `turbo run build`)
+3. Run tests (watch mode): `pnpm test` (uses Vitest)
+4. Start docs locally: `pnpm docs:dev` (serves at localhost:3000)
 
-## Core Concepts
-- **Router**: Defines a set of procedures. Use `initTRPC` to create a router builder.
-- **Procedure**: A function with an input parser (e.g., Zod schema) and a resolver. Created via `t.procedure.input(...).query/mutation/subscription(...)`.
-- **Context**: Request-scoped data (e.g., user session). Created per request via a function passed to `createContext` in adapters.
-- **Middleware**: Reusable logic that runs before resolver. Used for authentication, logging, etc.
-- **Client**: Created with `createTRPCClient` or `createTRPCReact` for React. Links handle serialization and transport.
+## Common Agent Workflows
 
-## Common Patterns
-- **Protecting procedures**: Use a middleware that checks `ctx.user` and throws `TRPCError` if unauthorized.
-- **Transformers**: Use `superjson` for preserving Date, Map, Set, etc. Wire via `transformer` option in both server and client.
-- **Adapters**: Each platform (Express, Fastify, Next.js, etc.) has a dedicated adapter in `@trpc/server/adapters/*`.
-- **SSR with Next.js**: Use `createServerSideHelpers` to prefetch queries on the server.
+### Modifying a Package
+1. Navigate: `cd packages/<target>`
+2. Make code changes
+3. Run package-specific tests: `pnpm test --filter @trpc/server`
+4. Lint: `pnpm lint` (from root or package)
+5. Ensure build passes: `pnpm build --filter @trpc/server`
+6. If introducing a user-facing change, add a changeset: `pnpm changeset` (follow prompts)
 
-## Contribution Guidelines
-- All new features should have tests.
-- Breaking changes must be discussed in an issue first.
-- Doc updates in `www` should accompany API changes.
-- Use `changeset` to document changes: `pnpm changeset`.
-- PRs are merged via squash.
+### Running Tests Across Packages
+- All tests: `pnpm test`
+- Test a single file: `vitest run path/to/test` (from package directory)
+- Tests with coverage: `pnpm test:coverage`
+- Integration tests often live in `examples/` – check each example’s README.
 
-## Useful Commands
-- `pnpm build` - build all packages
-- `pnpm --filter @trpc/server test` - test a specific package
-- `pnpm lint --fix` - auto-fix lint errors
-- `pnpm changeset` - create a changeset
+### Linting and Formatting
+- Lint entire project: `pnpm lint`
+- Format with Prettier: `pnpm format`
+- Fix auto-fixable issues: `pnpm lint:fix`
 
-When working with this repo, always consider the inter-package dependencies and ensure type consistency across client and server.
+### Contributing to Documentation
+- Documentation is in `www/`
+- Add/update `.mdx` files under `www/docs/`
+- Ensure internal links work: run `pnpm docs:dev` and visually verify.
+
+## Key Packages and Responsibilities
+- `@trpc/server` – Core server-side router, procedure definitions, middleware.
+- `@trpc/client` – Type-safe client for consuming tRPC APIs.
+- `@trpc/react-query` – React bindings with React Query integration.
+- `@trpc/next` – Next.js integration (server-side helpers, app router support).
+- `@trpc/playground` – Built-in API playground.
+- `@trpc/tests` – End-to-end and internal testing utilities.
+
+## Build System & Toolchain
+- **Package manager:** pnpm (workspaces)
+- **Task runner:** Turborepo (see `turbo.json`)
+- **Test runner:** Vitest (configured per package via `vitest.config.ts`)
+- **Typescript:** Strict mode, composite projects (builds generate `.d.ts`)
+- **Versioning:** Changesets (add a changeset with `pnpm changeset`; CI bumps versions and publishes)
+
+## Typical Developer Workflow for a Bug Fix
+1. Check existing issues/PRs.
+2. Create a branch: `git checkout -b fix/description`.
+3. Identify affected package(s).
+4. Write a failing test (if possible).
+5. Implement the fix.
+6. Run `pnpm test --filter <package>` and ensure all pass.
+7. Run `pnpm lint` to catch style violations.
+8. Add a changeset: `pnpm changeset` (patch/minor according to semver).
+9. Commit and push.
+
+## Environment Variables
+- None required for basic development, but some examples may need a `.env` file (copy from `.env.example`).
+
+## Troubleshooting
+- **Missing dependencies after pull:** Run `pnpm install` and `pnpm build`.
+- **Type errors in dependent packages after a change:** Rebuild the modified package first (`pnpm build --filter @trpc/server`), then rebuild downstream packages or root `pnpm build`.
+- **Playground not working locally:** Start the playground example: `cd examples/standalone-server && pnpm dev`.
+
+## Additional Resources
+- Official documentation: https://trpc.io
+- Contributing guide: `CONTRIBUTING.md` at repository root.
+- CI configuration: `.github/workflows/`
