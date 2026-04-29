@@ -109,7 +109,7 @@ fork 后天然拥有：
 
 `update-skills.yml` 不会直接把 AI 结果合入主分支。它会创建 `skills-manage/update-<run-id>` 分支并打开 PR；PR 本身也是 GitHub issue，可在 PR 里讨论、review、要求修改或关闭。每次更新已有 skill 前，当前版本会先复制到 `.agents/skill-archives/<source-id>/recent/<timestamp>/`；`recent` 只保留最近 10 个版本，超过 10 个后更早版本会移动到 `.agents/skill-archives/<source-id>/older/`。
 | `validate-skills.yml` | 每次 push 或 PR 自动运行；手动改配置、skill 或 workflow 后用于验收 | 执行 `pnpm check` 和 `node packages/cli/dist/index.js doctor --layer cloud --dir .`，检查 TypeScript、schema、provider 配置和层级图 | 如果 cloud provider 是 DeepSeek，缺少 `DEEPSEEK_API_KEY` 会提示需要配置；本地开发时这是预期提示 | Actions 通过或失败的检查结果 |
-| `release-skills.yml` | 打 tag 或手动发布云端只读数据时运行 | 执行 `node packages/cli/dist/index.js publish-cloud-ui --dir .`，生成 GitHub Pages 需要读取的静态数据 | 需要 GitHub Pages 相关权限；workflow 已声明 `contents: write`、`pages: write`、`id-token: write` | `public/data/skills-manage.json` 和后续 cloud-ui 静态发布产物 |
+| `release-skills.yml` | 打 tag 或手动发布云端只读 UI 时运行 | 执行 `node packages/cli/dist/index.js publish-cloud-ui --dir .`，生成 `dist/cloud-ui` 静态页面并部署到 GitHub Pages | 需要 GitHub Pages 相关权限；workflow 已声明 `contents: write`、`pages: write`、`id-token: write` | GitHub Pages 站点，以及 `public/data/skills-manage.json`、`dist/cloud-ui/index.html`、`dist/cloud-ui/data/skills-manage.json` |
 
 这样 fork 出来的仓库就是你的 cloud layer。云端 UI 只读，不提供修改 sources、触发 AI 更新或编辑 skills 的入口；写操作通过仓库提交、CLI 或 GitHub Actions 完成。
 

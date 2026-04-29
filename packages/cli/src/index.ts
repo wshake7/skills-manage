@@ -11,6 +11,7 @@ import {
   createManagedManifest,
   defaultConfig,
   readConfig,
+  readSkillManifests,
   resolveSources,
   writeConfig
 } from "@skills-manage/core";
@@ -143,15 +144,33 @@ program
       throw new Error("publish-cloud-ui requires a cloud config.");
     }
 
-    const dataDir = join(rootDir, config.pages.dataDir);
-    await mkdir(dataDir, { recursive: true });
-    await writeFile(
-      join(dataDir, "skills-manage.json"),
-      `${JSON.stringify({ layer: "cloud", sources: config.sources, generatedAt: new Date().toISOString() }, null, 2)}\n`,
-      "utf8"
-    );
-    console.log(`Wrote ${join(dataDir, "skills-manage.json")}`);
-  });
+      const generatedAt = new Date().toISOString();
+      const skills = await readSkillManifests(resolve(rootDir, config.skillsDir));
+      const snapshot = {
+        layer: "cloud",
+        readonly: true,
+        generatedAt,
+        sources: config.sources,
+        skills
+      };
+
+      const dataDir = join(rootDir, config.pages.dataDir);
+      await mkdir(dataDir, { recursive: true });
+      await writeFile(
+        join(dataDir, "skills-manage.json"),
+        `${JSON.stringify(snapshot, null, 2)}\n`,
+        "utf8"
+      );
+
+      const outDir = join(rootDir, config.pages.outDir);
+      const outDataDir = join(outDir, "data");
+      await mkdir(outDataDir, { recursive: true });
+      await writeFile(join(outDataDir, "skills-manage.json"), `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
+      await writeFile(join(outDir, "index.html"), cloudIndexHtml(), "utf8");
+
+      console.log(`Wrote ${join(dataDir, "skills-manage.json")}`);
+      console.log(`Wrote ${join(outDir, "index.html")}`);
+    });
 
 program
   .command("ui")
@@ -280,4 +299,84 @@ function safePathSegment(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "") || "skill";
+}
+
+function cloudIndexHtml(): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skills Manage Cloud</title>
+  <style>
+    :root { color-scheme: light; --ink: #18202f; --muted: #657086; --line: #d9dee8; --panel: #ffffff; --bg: #f5f7fb; --accent: #256f7a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+    header { border-bottom: 1px solid var(--line); background: var(--panel); }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 22px 0; }
+    h1 { font-size: 24px; margin: 0; letter-spacing: 0; }
+    .stamp { color: var(--muted); font-size: 13px; }
+    main { padding: 24px 0 40px; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .metric, .section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    .metric { padding: 16px; }
+    .metric strong { display: block; font-size: 26px; margin-bottom: 4px; }
+    .metric span, .empty { color: var(--muted); }
+    .section { margin-top: 16px; overflow: hidden; }
+    .section h2 { font-size: 16px; margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 14px; }
+    th { color: var(--muted); font-weight: 600; background: #fafbfe; }
+    tr:last-child td { border-bottom: 0; }
+    code { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+    .empty { padding: 16px; }
+    @media (max-width: 720px) { .top, .metrics { display: block; } .metric { margin-bottom: 12px; } th, td { padding: 10px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap top">
+      <h1>Skills Manage Cloud</h1>
+      <div class="stamp" id="generated">Loading snapshot...</div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="metrics">
+      <div class="metric"><strong id="source-count">0</strong><span>Sources</span></div>
+      <div class="metric"><strong id="skill-count">0</strong><span>Generated skills</span></div>
+      <div class="metric"><strong>Read-only</strong><span>Cloud layer</span></div>
+    </div>
+    <section class="section">
+      <h2>Sources</h2>
+      <div id="sources"></div>
+    </section>
+    <section class="section">
+      <h2>Skills</h2>
+      <div id="skills"></div>
+    </section>
+  </main>
+  <script>
+    const cell = (value) => '<td>' + value + '</td>';
+    const code = (value) => '<code>' + String(value ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) + '</code>';
+    const empty = (text) => '<div class="empty">' + text + '</div>';
+    fetch('./data/skills-manage.json')
+      .then((response) => response.json())
+      .then((data) => {
+        const sources = data.sources || [];
+        const skills = data.skills || [];
+        document.getElementById('generated').textContent = 'Generated ' + new Date(data.generatedAt).toLocaleString();
+        document.getElementById('source-count').textContent = sources.length;
+        document.getElementById('skill-count').textContent = skills.length;
+        document.getElementById('sources').innerHTML = sources.length ? '<table><thead><tr><th>ID</th><th>Type</th><th>Value</th><th>Status</th></tr></thead><tbody>' + sources.map((source) => '<tr>' + cell(code(source.id)) + cell(source.type) + cell(code(source.value)) + cell(source.enabled === false ? 'disabled' : 'enabled') + '</tr>').join('') + '</tbody></table>' : empty('No sources configured yet.');
+        document.getElementById('skills').innerHTML = skills.length ? '<table><thead><tr><th>Name</th><th>Source repo</th><th>Provider</th><th>Generated</th></tr></thead><tbody>' + skills.map((skill) => '<tr>' + cell(code(skill.name)) + cell(code(skill.sourceRepo)) + cell(skill.provider) + cell(new Date(skill.generatedAt).toLocaleString()) + '</tr>').join('') + '</tbody></table>' : empty('No generated skills yet. Run Update skills and merge its PR first.');
+      })
+      .catch((error) => {
+        document.getElementById('sources').innerHTML = empty('Could not load cloud snapshot: ' + error.message);
+        document.getElementById('skills').innerHTML = empty('No data loaded.');
+      });
+  </script>
+</body>
+</html>
+`;
 }
