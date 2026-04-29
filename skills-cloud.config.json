@@ -7,6 +7,12 @@
       "type": "github",
       "value": "https://github.com/trpc/trpc",
       "enabled": true
+    },
+    {
+      "id": "springboot",
+      "type": "github",
+      "value": "https://github.com/spring-projects/spring-boot",
+      "enabled": true
     }
   ],
   "provider": "deepseek",
