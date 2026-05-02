@@ -4,8 +4,7 @@
   "sourceRepo": "trpc/trpc",
   "sourceCommit": "23c723cfeaf07da28a52a5c35c3dcccf96a47578",
   "provider": "deepseek",
-  "mode": "generated",
-  "generatedAt": "2026-05-02T05:30:04.219Z",
+  "generatedAt": "2026-04-29T13:37:18.724Z",
   "managedBy": "skills-manage",
   "overrides": []
 }
