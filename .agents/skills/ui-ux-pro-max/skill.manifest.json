@@ -1,0 +1,11 @@
+{
+  "name": "ui-ux-pro-max",
+  "layer": "cloud",
+  "sourceRepo": "nextlevelbuilder/ui-ux-pro-max-skill",
+  "sourceCommit": "b7e3af80f6e331f6fb456667b82b12cade7c9d35",
+  "provider": "deepseek",
+  "mode": "vendor",
+  "generatedAt": "2026-05-03T05:48:41.146Z",
+  "managedBy": "skills-manage",
+  "overrides": []
+}
