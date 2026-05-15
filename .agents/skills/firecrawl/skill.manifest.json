@@ -1,0 +1,23 @@
+{
+  "name": "firecrawl",
+  "layer": "cloud",
+  "sourceRepo": "firecrawl/firecrawl",
+  "sourceCommit": "05994928d424d2a1e2ad9e105a951e21a7f5f8ef",
+  "provider": "deepseek",
+  "mode": "runtime-adapter",
+  "runtime": {
+    "preferred": [
+      "mcp",
+      "api"
+    ],
+    "commands": [],
+    "env": [
+      "FIRECRAWL_API_KEY"
+    ],
+    "requiresUserSetup": true,
+    "notes": "Prefer installed Firecrawl skills or MCP/API tooling; the cloud skill should describe setup, credentials, and fallbacks."
+  },
+  "generatedAt": "2026-05-15T06:22:26.359Z",
+  "managedBy": "skills-manage",
+  "overrides": []
+}
