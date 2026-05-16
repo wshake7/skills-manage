@@ -1,160 +1,157 @@
 # tRPC Skill
 
 ## Overview
-tRPC (TypeScript Remote Procedure Call) provides end-to-end type safety between your client and server without code generation. It leverages TypeScript to infer request/response types across the network, enabling a seamless developer experience.
+tRPC is a framework for building fully type-safe APIs using TypeScript. It eliminates the need for a separate schema or code generation by directly inferring types from your server code. The core flow: define procedures (queries, mutations) on a server router, export the router type, and use it to create a type-safe client.
 
-**When to use this skill:** You are working in a codebase that uses tRPC (package `@trpc/server`, `@trpc/client`) or when you need to implement type-safe API communication between a TypeScript server and client (React, Next.js, Node.js, etc.).
+## When to Use
+- Building full-stack TypeScript applications (Next.js, Express, etc.)
+- Need seamless type sharing between backend and frontend
+- Prefer a code-first API approach over OpenAPI or GraphQL
+
+## Repository Structure (Typical Monorepo)
+```
+server/
+  api/
+    routers/
+      user.ts
+      post.ts
+    root.ts          # Merge all sub-routers
+    context.ts       # Request context (DB, auth, etc.)
+  index.ts          # HTTP server setup (Express, Next.js API route, etc.)
+client/
+  utils/
+    trpc.ts         # Client creation and exported hooks
+pages/              # Frontend pages using the client
+shared/
+  types             # Optional shared types (but often inferred from server)
+```
 
 ## Core Concepts
-- **Procedures:** The server endpoints, defined as **queries** (GET), **mutations** (POST/PUT/DELETE), or **subscriptions** (WebSocket).
-- **Router:** A collection of procedures, organized hierarchically.
-- **Middleware:** Functions that run before a procedure (e.g., authentication, logging).
-- **Context:** Request-scoped data (e.g., user, database connection) passed to all procedures and middleware.
-- **Client:** The typed API client that mirrors the server router structure, enabling autocompletion and type-checking for inputs and outputs.
 
-## Project Structure (Typical)
-```
-project/
-├── server/
-│   ├── trpc.ts          # tRPC instance creation
-│   ├── context.ts       # Context factory
-│   ├── routers/
-│   │   ├── index.ts     # App router (merges sub-routers)
-│   │   └── user.ts      # Sub-router for user operations
-│   └── index.ts         # Entry, export appRouter type
-├── client/
-│   ├── trpc.ts          # tRPC client setup
-│   └── components/      # React components using tRPC hooks
-└── shared/              # Alternatively, import types directly from server
-```
+### 1. Create a Router
+Define public procedures using `t.procedure`:
 
-## Workflow for AI Agent
-
-### 1. Set up tRPC Server Instance
-In `server/trpc.ts`:
-```typescript
+```ts
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC.create();
+const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
-// Later: auth middleware, protected procedures
 ```
 
-### 2. Define Procedures in Routers
-In `server/routers/user.ts`:
-```typescript
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
-
-export const userRouter = router({
-  getById: publicProcedure
+Add sub-routers:
+```ts
+const userRouter = router({
+  getUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       return ctx.db.user.findUnique({ where: { id: input.id } });
     }),
-  create: publicProcedure
-    .input(z.object({ name: z.string() }))
+  createUser: publicProcedure
+    .input(z.object({ name: z.string(), email: z.string().email() }))
     .mutation(async ({ input, ctx }) => {
       return ctx.db.user.create({ data: input });
     }),
 });
-```
-
-### 3. Build the App Router
-In `server/routers/index.ts`:
-```typescript
-import { router } from '../trpc';
-import { userRouter } from './user';
 
 export const appRouter = router({
   user: userRouter,
 });
+```
 
+### 2. Context
+Define a per-request context factory:
+```ts
+import { inferAsyncReturnType } from '@trpc/server';
+
+export const createContext = async (opts) => {
+  return { db: prisma };
+};
+
+export type Context = inferAsyncReturnType<typeof createContext>;
+```
+Pass it to `initTRPC`:
+```ts
+const t = initTRPC.context<Context>().create();
+```
+
+### 3. Middleware
+Use `t.middleware` to add reusable logic (auth, logging):
+```ts
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+  return next({ ctx: { user: ctx.user } });
+});
+const protectedProcedure = publicProcedure.use(isAuthed);
+```
+
+### 4. Client Setup
+Export type for frontend:
+```ts
 export type AppRouter = typeof appRouter;
 ```
 
-### 4. Create Context
-In `server/context.ts`:
-```typescript
-import { CreateNextContextOptions } from '@trpc/server/adapters/next'; // if Next.js
-export const createContext = async (opts: CreateNextContextOptions) => {
-  return { db: /* your db client */ };
-};
-```
-
-### 5. Set up tRPC Client
-In `client/trpc.ts`:
-```typescript
+**React Client (with @trpc/react-query):**
+```ts
 import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server/routers'; // import type only
+import type { AppRouter } from '../server/api/root';
 
 export const trpc = createTRPCReact<AppRouter>();
 ```
-
-### 6. Use in React Component
-```typescript
-import { trpc } from './trpc';
-
-function UserProfile({ id }: { id: string }) {
-  const { data, isLoading } = trpc.user.getById.useQuery({ id });
-  const mutation = trpc.user.create.useMutation();
-  // ...
-}
+Then use hooks:
+```ts
+const { data } = trpc.user.getUser.useQuery({ id: '123' });
+const mutation = trpc.user.createUser.useMutation();
 ```
 
-## Common Tasks and Guidance
+**Next.js Integration:** Wrap `<TrpcProvider>` around the app, creating a `trpc` client (see `@trpc/next`).
 
-### Adding Authentication Middleware
-```typescript
-const isAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
-  return next({ ctx: { user: ctx.user } }); // user is now non-nullable
+**Vanilla Client:**
+```ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+export const client = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: '/api/trpc' })],
 });
-// protectedProcedure = t.procedure.use(isAuthed);
+// Then call like: client.user.getUser.query({ id: '123' })
 ```
 
-### Error Handling
-- Use `TRPCError` to throw typed errors with codes (e.g., NOT_FOUND, BAD_REQUEST, FORBIDDEN).
-- On client, query/mutation hooks return `error` property; you can check `error.data.code`.
-- Global error formatting: `t.errorFormatter`.
-
-### Input Validation
-Always use `zod` for procedure inputs. Define schemas alongside procedures.
-
-### Debugging Type Issues
-- If types aren't inferred, ensure the client imports `AppRouter` type correctly.
-- For monorepos, ensure proper TypeScript project references.
-- Use `trpc.useUtils()` to invalidate queries after mutations.
-
-### Transforming Responses / Payloads
-Use `superjson` as a transformer for Date, Map, Set etc.:
-```typescript
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
+### 5. Error Handling
+Throw `TRPCError` in procedures; client gets structured error:
+```ts
+throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
 ```
 
-### Next.js App Router Integration
-- Use `@trpc/next` with `createNextApiHandler` for pages router.
-- For app router: use `fetch request handler` and `createTRPCNext` is not needed; use `createTRPCReact` and `trpcProvider`.
+## Workflow Guidance for Copilot
 
-### Testing tRPC
-- Call procedures directly on the server without HTTP: `const caller = appRouter.createCaller(mockCtx);` then `caller.user.create(...)`.
+When asked to implement a tRPC endpoint or feature, follow this order:
 
-## Quick Reference Commands
-- Define router: `export const appRouter = router({ ... });`
-- Query procedure: `.query(...)`
-- Mutation procedure: `.mutation(...)`
-- Subscription: `.subscription(...)`
-- Create context: `async (opts) => ({ ... })`
-- Client setup: `createTRPCReact<AppRouter>()`
-- React hook: `trpc.<route>.<procedure>.useQuery(input?)`
-- Invalidating: `utils.<route>.<procedure>.invalidate()`
+1. **Identify the operation** (query, mutation, subscription).
+2. **Define input schema** using Zod inside `.input()`. Prefer exact validation.
+3. **Implement the procedure** in the appropriate router file. Access `ctx` for DB/Auth.
+4. **Register the procedure** in the router (or sub-router) and merge into the root router (`appRouter`).
+5. **If needed, update context** to include new dependencies (e.g., new DB model).
+6. **Client usage**: Import the `trpc` utility and use the corresponding hook/ method.
+7. **For form submissions**, use `mutation` with `.mutate()`, handle loading/error states.
 
-## Pitfalls
-- Always import types from server using `import type` to avoid bundling server code on client.
-- Middleware order matters: `publicProcedure.use(m1).use(m2)` executes m1 then m2.
-- Context is not shared between subscriptions; use wssContext differently.
-- Large inputs/outputs: avoid unnecessary data, use selects/picks.
+## Common Patterns
 
-This skill helps you navigate tRPC codebases, implement type-safe APIs quickly, and debug common issues.
+- **Input with validation**: Always use `.input(zodSchema)`. The inferred input type is automatically available on the client.
+- **Output typing**: Use `zodSchema.output` for complex returns or infer with `inferRouterOutputs`:
+  ```ts
+  export type User = RouterOutput['user']['getUser'];
+  ```
+- **Middleware composition**: Chain `.use()` to stack auth, logging, context enrichment.
+- **Batching**: Use `httpBatchLink` for combining multiple requests into one.
+- **SSR (Next.js)**: Use `createProxySSGHelpers` to prefetch data on the server.
+
+## Node.js / Non-Browser Clients
+If you need a client in Node (e.g., CLI, server-to-server), use the vanilla `createTRPCClient` with a Node-compatible link (like `httpLink`).
+
+## Testing
+- Mock `ctx` to test procedures directly: `caller = appRouter.createCaller({ db: mockDb })`.
+- Test clients with mock service workers or by wrapping in a test context.
+
+## Version Notes
+This skill targets tRPC v10.x, but concepts apply to v11 with minor adjustments (e.g., `initTRPC.create` is stable). Always check the version used in the project.
