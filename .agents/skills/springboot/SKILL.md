@@ -1,75 +1,95 @@
 # Spring Boot Codex Skill
 
-## Purpose
-Provide guidance for AI coding agents working with the Spring Boot repository, enabling efficient navigation, development, and contribution.
+## Overview
+Spring Boot makes it easy to create stand-alone, production-grade Spring based Applications. The repository contains the framework's source code, auto-configuration, starters, actuators, tools, and samples.
 
-## Repository Structure Overview
-- **spring-boot-project/**: Main source code, divided into:
-  - `spring-boot`: Core module (SpringApplication, environment, web server, etc.)
-  - `spring-boot-autoconfigure`: Auto-configuration classes (conditional beans, starters)
-  - `spring-boot-actuator`: Production-ready features (health, metrics, endpoints)
-  - `spring-boot-starters/`: Starter POMs that bundle dependencies
-  - Other modules: `spring-boot-devtools`, `spring-boot-test`, `spring-boot-test-autoconfigure`, etc.
-- **spring-boot-tools/**: Maven and Gradle plugins, build tooling (e.g., `spring-boot-maven-plugin`, `spring-boot-gradle-plugin`)
-- **spring-boot-tests/**: Integration tests, smoke tests, deployment tests
-- **spring-boot-docs/**: Reference documentation sources (Asciidoctor)
-- **spring-boot-samples/**: Example applications demonstrating features
+## Project Structure
+- `spring-boot-project/` – Core framework modules:
+  - `spring-boot` – Foundation, `SpringApplication`, listeners, admin, etc.
+  - `spring-boot-autoconfigure` – Auto-configuration for many libraries.
+  - `spring-boot-starters` – Curated dependency sets (web, data-jpa, etc.).
+  - `spring-boot-actuator` – Production-ready features (health, metrics).
+  - `spring-boot-actuator-autoconfigure` – Auto-config for actuator.
+  - `spring-boot-test` / `spring-boot-test-autoconfigure` – Test utilities and slices.
+  - `spring-boot-devtools` – Developer productivity tools.
+  - `spring-boot-cli` / `spring-boot-loader` / `spring-boot-docker-compose` / `spring-boot-tools` – Additional modules.
+- `spring-boot-tests/` – Integration tests.
+- `spring-boot-system-tests/` – System-level verification.
+- `samples/` – Example applications.
 
-## Build & Test Commands
-- **Full build**: `./gradlew build` (Gradle wrapper; requires Java 17+)
-- **Core module build**: `./gradlew spring-boot-project:spring-boot:build`
-- **Run all tests**: `./gradlew test`
-- **Run a specific test class**: `./gradlew :spring-boot-project:spring-boot-autoconfigure:test --tests "org.springframework.boot.autoconfigure.condition.ConditionalOnClassTests"`
-- **Build without tests**: `./gradlew assemble -x test`
-- **Generate docs**: `./gradlew :spring-boot-docs:asciidoctor`
-- **Check dependency updates**: `./gradlew dependencyUpdates`
+## Build & Test
+- **Gradle Wrapper**: Use `./gradlew` (Linux/macOS) or `gradlew.bat` (Windows).
+- **Build the whole project**: `./gradlew build`
+- **Build a specific module**: `./gradlew :spring-boot-project:spring-boot:build`
+- **Run tests**: `./gradlew test` (module: `./gradlew :spring-boot-project:spring-boot:test`)
+- **Skip tests**: append `-x test`
+- **Checkstyle & formatting**: `./gradlew checkstyleMain checkstyleTest`; apply formatting with `./gradlew format` (see CONTRIBUTING.adoc).
+- **Run a sample**: `./gradlew :spring-boot-samples:spring-boot-sample-simple:bootRun`
+- **Generate docs**: `./gradlew :spring-boot-project:spring-boot-docs:asciidoctor`
 
-## Common Development Tasks
-### Adding a New Auto-Configuration
-1. Locate relevant package under `spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/`.
-2. Create a configuration class annotated with `@Configuration` and typically `@ConditionalOnClass`, `@ConditionalOnMissingBean`, etc.
-3. Register the configuration in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` (Spring Boot 3.x) or `spring.factories` (older versions).
-4. Add corresponding `@ConfigurationProperties` if needed.
-5. Add tests in the same autoconfigure module under `src/test/java/.../autoconfigure/` using `ApplicationContextRunner`.
+## Key Components for Agent Work
+- `SpringApplication` – Bootstrap and run a Spring application.
+- `@SpringBootApplication` – Convenience annotation combining `@Configuration`, `@EnableAutoConfiguration`, `@ComponentScan`.
+- `@EnableAutoConfiguration` – Triggers auto-configuration.
+- `application.properties` / `application.yml` – External configuration.
+- `spring.factories` – Register auto-configuration classes, listeners, etc. (located in `META-INF/spring.factories`; new style uses `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`).
+- `Environment`, `Binder`, `@ConfigurationProperties` – Type-safe configuration binding.
+- Actuator endpoints: `/health`, `/info`, `/metrics`, etc.
+
+## Common Workflows
+### Creating a New Auto-Configuration
+1. Add a new module or package to `spring-boot-autoconfigure`.
+2. Implement `@Configuration` class annotated with `@AutoConfiguration` (or `@Configuration` with `spring.factories` entry).
+3. Use `@ConditionalOnClass`, `@ConditionalOnMissingBean`, etc., for conditional wiring.
+4. Define `@ConfigurationProperties` for custom settings.
+5. Register in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
+6. Add corresponding tests in the autoconfigure test module.
 
 ### Adding a New Starter
-- Add a new module under `spring-boot-project/spring-boot-starters/`.
-- It should be a POM with the starter name, e.g., `spring-boot-starter-foo`.
-- Include the necessary dependencies, typically the auto-configuration module and third-party library.
+1. Create a new directory under `spring-boot-starters/`.
+2. Add a minimal `build.gradle` that depends on the necessary autoconfigure module and the target library.
+3. Optionally add transitive dependencies.
 
-### Fixing a Bug
-- Locate the relevant module (core, autoconfigure, web, etc.).
-- Understand the behavior by looking at tests (often named `*Tests`).
-- Write a failing test reproducing the bug, then fix.
-- Ensure backward compatibility; Spring Boot is strict about not breaking existing users.
+### Customizing an Existing Auto-Configuration
+- Search for the appropriate auto-configuration class (e.g., `DataSourceAutoConfiguration`).
+- Understand `@Conditional` annotations and property prefixes.
+- Extend or exclude using `@EnableAutoConfiguration(exclude = ...)` or `spring.autoconfigure.exclude` property.
+- Replace a bean by defining your own with `@Primary` or `@Bean` in a custom configuration.
 
-### Working with Tests
-- **Unit Tests**: Use JUnit 5, often with `Mockito` for mocking.
-- **Application Context Tests**: Use `org.springframework.boot.test.context.runner.ApplicationContextRunner` to load minimal contexts.
-- **Web Tests**: `@SpringBootTest` with `webEnvironment` for full server testing, `MockMvc` for controller tests, `TestRestTemplate` for REST.
-- **Test Utilities**: `OutputCaptureExtension` for capturing log output, `TestPropertyValues` for dynamic property overrides.
+### Debugging an Application
+- Use `--debug` flag to print auto-configuration report.
+- Enable actuator endpoints: `management.endpoints.web.exposure.include=*`.
+- Use DevTools for automatic restart: add `spring-boot-devtools` dependency.
+- Logging levels: `logging.level.org.springframework=DEBUG` in properties.
 
-## Code Style & Conventions
-- Follow Spring Framework code style (tab size 4, indent 4 spaces).
-- Class names, method names, and variable names follow standard Java conventions.
-- Use `@since` tags for new public elements.
-- Javadoc on public API is mandatory.
-- License header must be present (Apache 2.0).
+## Configuration & Profiles
+- Properties are loaded from many sources, ordered. Use `spring.config.location` to override.
+- Profiles: `spring.profiles.active=dev` activates beans/environments.
+- Multi-document YAML: separate with `---` and `spring.config.activate.on-profile`.
+- `@Value` vs `@ConfigurationProperties` – prefer the latter for structured, type-safe binding.
 
-## Useful Patterns
-- **Auto-configuration ordering**: Use `@AutoConfigureBefore`/`@AutoConfigureAfter` to control order.
-- **Conditional annotations**: `ConditionalOnClass`, `ConditionalOnMissingBean`, `ConditionalOnProperty`, `ConditionalOnWebApplication`, etc.
-- **Property binding**: Use `@ConfigurationProperties` with `@ConstructorBinding` (recommended for immutable config) or JavaBean binding.
+## Testing
+- `@SpringBootTest` – Full integration test.
+- `@WebMvcTest`, `@DataJpaTest`, `@RestClientTest`, `@JsonTest` – Slices for focused testing.
+- `@MockBean` / `@SpyBean` – Mock dependencies.
+- `@TestPropertySource` – Override properties for test.
+- `@AutoConfigureTestDatabase` – Replace database with in-memory for tests.
+- `TestRestTemplate` / `WebTestClient` – For HTTP testing.
+- Use `OutputCaptureExtension` to capture log output (JUnit 5).
 
-## Dependency Insights
-- Spring Boot manages a curated set of dependencies via the `spring-boot-dependencies` BOM.
-- When adding a new third-party library, consider adding it to the BOM (`spring-boot-project/spring-boot-dependencies/build.gradle`).
+## Actuator Basics
+- Endpoints exposed via HTTP or JMX; health and info are available by default.
+- Custom health indicators implement `HealthIndicator`.
+- Custom info contributors implement `InfoContributor`.
+- Metrics: Micrometer integration; auto-configured for many backends.
 
-## Documentation
-- New features must be documented in `spring-boot-docs/src/docs/asciidoc/` using Asciidoctor.
-- Update relevant `.adoc` files (e.g., `howto.adoc`, `features/*.adoc`).
+## Repository Standards
+- Follow Spring Framework code style (see CONTRIBUTING.adoc).
+- Write JUnit 5 tests with AssertJ.
+- Use `@GradleTest` for integration tests that require a Gradle build.
+- Keep public API as per `@since` tags.
 
-## Links
-- Main repository: https://github.com/spring-projects/spring-boot
-- Reference documentation: https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/
-- Issue tracker: https://github.com/spring-projects/spring-boot/issues
+## References
+- Official documentation: https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/
+- GitHub repository: https://github.com/spring-projects/spring-boot
+- Contributing guide: CONTRIBUTING.adoc in the root.
