@@ -1,75 +1,51 @@
-# Spring Boot Codex Skill
+# Spring Boot Development Skill
 
-## Purpose
-Provide guidance for AI coding agents working with the Spring Boot repository, enabling efficient navigation, development, and contribution.
+## Overview
+Spring Boot is the framework for building production-ready Spring applications. This repository (spring-projects/spring-boot) contains the core framework, auto-configuration, starters, tools, and more.
 
-## Repository Structure Overview
-- **spring-boot-project/**: Main source code, divided into:
-  - `spring-boot`: Core module (SpringApplication, environment, web server, etc.)
-  - `spring-boot-autoconfigure`: Auto-configuration classes (conditional beans, starters)
-  - `spring-boot-actuator`: Production-ready features (health, metrics, endpoints)
-  - `spring-boot-starters/`: Starter POMs that bundle dependencies
-  - Other modules: `spring-boot-devtools`, `spring-boot-test`, `spring-boot-test-autoconfigure`, etc.
-- **spring-boot-tools/**: Maven and Gradle plugins, build tooling (e.g., `spring-boot-maven-plugin`, `spring-boot-gradle-plugin`)
-- **spring-boot-tests/**: Integration tests, smoke tests, deployment tests
-- **spring-boot-docs/**: Reference documentation sources (Asciidoctor)
-- **spring-boot-samples/**: Example applications demonstrating features
+## Repository Layout
+- `spring-boot-project/`: Core modules (e.g., `spring-boot`, `spring-boot-autoconfigure`, `spring-boot-starters`)
+- `spring-boot-tests/`: Integration tests and smoke tests
+- `spring-boot-system-tests/`, `spring-boot-cli/`, etc.
 
-## Build & Test Commands
-- **Full build**: `./gradlew build` (Gradle wrapper; requires Java 17+)
-- **Core module build**: `./gradlew spring-boot-project:spring-boot:build`
-- **Run all tests**: `./gradlew test`
-- **Run a specific test class**: `./gradlew :spring-boot-project:spring-boot-autoconfigure:test --tests "org.springframework.boot.autoconfigure.condition.ConditionalOnClassTests"`
-- **Build without tests**: `./gradlew assemble -x test`
-- **Generate docs**: `./gradlew :spring-boot-docs:asciidoctor`
-- **Check dependency updates**: `./gradlew dependencyUpdates`
+## Build Commands
+- `./gradlew build` - compile and test all modules
+- `./gradlew build -x test` to skip tests
+- `./gradlew publishToMavenLocal` to install locally
+- `./gradlew :spring-boot-project:spring-boot:javadoc` for docs
 
-## Common Development Tasks
-### Adding a New Auto-Configuration
-1. Locate relevant package under `spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/`.
-2. Create a configuration class annotated with `@Configuration` and typically `@ConditionalOnClass`, `@ConditionalOnMissingBean`, etc.
-3. Register the configuration in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` (Spring Boot 3.x) or `spring.factories` (older versions).
-4. Add corresponding `@ConfigurationProperties` if needed.
-5. Add tests in the same autoconfigure module under `src/test/java/.../autoconfigure/` using `ApplicationContextRunner`.
+## Development Workflow
+1. Clone and import into IDE (IntelliJ IDEA recommended; use "Import Project" and select `build.gradle`).
+2. Set up Gradle JDK properly.
+3. Make changes, run `./gradlew build`.
+4. For new features, ensure tests are added.
+5. To test a sample: `cd spring-boot-tests/spring-boot-smoke-tests/... && ../../gradlew bootRun`
+6. Before PR, run full build.
 
-### Adding a New Starter
-- Add a new module under `spring-boot-project/spring-boot-starters/`.
-- It should be a POM with the starter name, e.g., `spring-boot-starter-foo`.
-- Include the necessary dependencies, typically the auto-configuration module and third-party library.
+## Key Modules
+- `spring-boot-autoconfigure`: Auto-configuration classes. Add or modify using `@Conditional` annotations and `spring.factories` entry.
+- `spring-boot-starters`: POM-only modules that pull in dependencies.
+- `spring-boot-actuator`: Production-ready features.
+- `spring-boot-devtools`: Developer tools.
 
-### Fixing a Bug
-- Locate the relevant module (core, autoconfigure, web, etc.).
-- Understand the behavior by looking at tests (often named `*Tests`).
-- Write a failing test reproducing the bug, then fix.
-- Ensure backward compatibility; Spring Boot is strict about not breaking existing users.
+## Auto-Configuration Contribution
+1. Identify feature to auto-configure.
+2. Create class annotated with `@Configuration` and use `@ConditionalOnClass`, `@ConditionalOnMissingBean`, etc.
+3. Register in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` (new method) or `spring.factories`.
+4. Add corresponding starter if needed.
+5. Write tests in `spring-boot-autoconfigure/src/test`.
 
-### Working with Tests
-- **Unit Tests**: Use JUnit 5, often with `Mockito` for mocking.
-- **Application Context Tests**: Use `org.springframework.boot.test.context.runner.ApplicationContextRunner` to load minimal contexts.
-- **Web Tests**: `@SpringBootTest` with `webEnvironment` for full server testing, `MockMvc` for controller tests, `TestRestTemplate` for REST.
-- **Test Utilities**: `OutputCaptureExtension` for capturing log output, `TestPropertyValues` for dynamic property overrides.
+## Testing
+- Unit tests: JUnit 5, Mockito.
+- Integration tests: with `@SpringBootTest`, test slices (`@WebMvcTest`, etc.).
+- Test auto-configurations with `ApplicationContextRunner`.
 
-## Code Style & Conventions
-- Follow Spring Framework code style (tab size 4, indent 4 spaces).
-- Class names, method names, and variable names follow standard Java conventions.
-- Use `@since` tags for new public elements.
-- Javadoc on public API is mandatory.
-- License header must be present (Apache 2.0).
+## Common Tasks
+- Adding a new property: define in `@ConfigurationProperties` classes, add metadata via `additional-spring-configuration-metadata.json`.
+- Updating dependency versions: check `spring-boot-project/spring-boot-dependencies/build.gradle` (managed versions).
+- Generating documentation: `./gradlew asciidoctor` under `spring-boot-project/spring-boot-docs`.
 
-## Useful Patterns
-- **Auto-configuration ordering**: Use `@AutoConfigureBefore`/`@AutoConfigureAfter` to control order.
-- **Conditional annotations**: `ConditionalOnClass`, `ConditionalOnMissingBean`, `ConditionalOnProperty`, `ConditionalOnWebApplication`, etc.
-- **Property binding**: Use `@ConfigurationProperties` with `@ConstructorBinding` (recommended for immutable config) or JavaBean binding.
-
-## Dependency Insights
-- Spring Boot manages a curated set of dependencies via the `spring-boot-dependencies` BOM.
-- When adding a new third-party library, consider adding it to the BOM (`spring-boot-project/spring-boot-dependencies/build.gradle`).
-
-## Documentation
-- New features must be documented in `spring-boot-docs/src/docs/asciidoc/` using Asciidoctor.
-- Update relevant `.adoc` files (e.g., `howto.adoc`, `features/*.adoc`).
-
-## Links
-- Main repository: https://github.com/spring-projects/spring-boot
-- Reference documentation: https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/
-- Issue tracker: https://github.com/spring-projects/spring-boot/issues
+## Contributing Guidelines
+- Fork, branch, commit with Spring conventions.
+- All code must have ASL 2 license header.
+- Run `./gradlew checkstyleMain checkstyleTest` for style checks.
