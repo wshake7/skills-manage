@@ -2,10 +2,9 @@
   "name": "springboot",
   "layer": "cloud",
   "sourceRepo": "spring-projects/spring-boot",
-  "sourceCommit": "7e29e3c06d90c40930cfca365a9050c6e5a318ed",
+  "sourceCommit": "b744839f53d77dc04d53e6dd2e9d5f9c691721b7",
   "provider": "deepseek",
-  "mode": "generated",
-  "generatedAt": "2026-05-25T07:00:37.164Z",
+  "generatedAt": "2026-04-29T13:38:15.949Z",
   "managedBy": "skills-manage",
   "overrides": []
 }
