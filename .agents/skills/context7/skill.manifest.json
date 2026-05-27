@@ -1,0 +1,25 @@
+{
+  "name": "context7",
+  "layer": "cloud",
+  "sourceRepo": "upstash/context7",
+  "sourceCommit": "7e956e594584db4b1b66a3a4a07781e92b4d7e45",
+  "provider": "deepseek",
+  "mode": "runtime-adapter",
+  "runtime": {
+    "preferred": [
+      "mcp",
+      "cli"
+    ],
+    "commands": [
+      "npx ctx7@latest"
+    ],
+    "env": [
+      "CONTEXT7_API_KEY"
+    ],
+    "requiresUserSetup": true,
+    "notes": "Prefer Context7 MCP when available; use ctx7 CLI as the fallback path for current documentation."
+  },
+  "generatedAt": "2026-05-27T06:48:34.097Z",
+  "managedBy": "skills-manage",
+  "overrides": []
+}
