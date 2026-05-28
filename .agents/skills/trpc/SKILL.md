@@ -1,160 +1,125 @@
-# tRPC Skill
+# tRPC Monorepo Skill
 
-## Overview
-tRPC (TypeScript Remote Procedure Call) provides end-to-end type safety between your client and server without code generation. It leverages TypeScript to infer request/response types across the network, enabling a seamless developer experience.
+This skill provides a working knowledge of the [tRPC](https://github.com/trpc/trpc) monorepo to help an AI coding agent navigate, understand, and contribute effectively.
 
-**When to use this skill:** You are working in a codebase that uses tRPC (package `@trpc/server`, `@trpc/client`) or when you need to implement type-safe API communication between a TypeScript server and client (React, Next.js, Node.js, etc.).
+## Project Overview
 
-## Core Concepts
-- **Procedures:** The server endpoints, defined as **queries** (GET), **mutations** (POST/PUT/DELETE), or **subscriptions** (WebSocket).
-- **Router:** A collection of procedures, organized hierarchically.
-- **Middleware:** Functions that run before a procedure (e.g., authentication, logging).
-- **Context:** Request-scoped data (e.g., user, database connection) passed to all procedures and middleware.
-- **Client:** The typed API client that mirrors the server router structure, enabling autocompletion and type-checking for inputs and outputs.
+tRPC is an end-to-end typesafe API layer for TypeScript. This monorepo contains the core `@trpc/server`, `@trpc/client`, adapters, plugins, and auxiliary packages.
 
-## Project Structure (Typical)
+- **Package Manager**: pnpm (workspaces)
+- **Language**: TypeScript (strict)
+- **Build Tool**: tsup primarily, with some packages using custom bundling
+- **Testing**: Vitest (with React Testing Library where needed)
+- **Linting/Formatting**: ESLint + Prettier (via `@trpc/config` shared config)
+
+## Repository Structure
+
 ```
-project/
-├── server/
-│   ├── trpc.ts          # tRPC instance creation
-│   ├── context.ts       # Context factory
-│   ├── routers/
-│   │   ├── index.ts     # App router (merges sub-routers)
-│   │   └── user.ts      # Sub-router for user operations
-│   └── index.ts         # Entry, export appRouter type
-├── client/
-│   ├── trpc.ts          # tRPC client setup
-│   └── components/      # React components using tRPC hooks
-└── shared/              # Alternatively, import types directly from server
-```
-
-## Workflow for AI Agent
-
-### 1. Set up tRPC Server Instance
-In `server/trpc.ts`:
-```typescript
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create();
-export const router = t.router;
-export const publicProcedure = t.procedure;
-// Later: auth middleware, protected procedures
+packages/
+  server/          # @trpc/server – core router, procedure, middleware
+  client/          # @trpc/client – typesafe client & links
+  next/            # @trpc/next – Next.js integration (app router, pages router)
+  react-query/     # @trpc/react-query – React hooks on top of @tanstack/react-query
+  tests/           # integration/e2e tests across adapters
+  config/          # shared ESLint, Prettier, tsconfig (used by all packages)
+  ... (adapters, plugins, etc.)
+www/               # documentation website (Docusaurus)
+examples/          # minimal reproductions & starter templates
+scripts/           # build/CI utility scripts
 ```
 
-### 2. Define Procedures in Routers
-In `server/routers/user.ts`:
-```typescript
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+## Key Concepts
 
-export const userRouter = router({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input, ctx }) => {
-      return ctx.db.user.findUnique({ where: { id: input.id } });
-    }),
-  create: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      return ctx.db.user.create({ data: input });
-    }),
-});
+### Router & Procedures
+- `t.router(...)` creates a collection of **procedures** (queries, mutations, subscriptions).
+- A procedure is defined with `.input(...)` (optional Zod schema) and `.query()`, `.mutation()`, or `.subscription()`.
+- **Context** is injected via `createContext()` and passed to every procedure.
+
+### Middleware
+- Middleware wraps a procedure (or router) and can modify context, validate input, handle errors, or short-circuit.
+- Commonly used: `trpcMiddleware`, `authMiddleware`, logging, timing.
+
+### Client-side
+- `createTRPCClient<AppRouter>()` or `createTRPCReact<AppRouter>()` generates a typed proxy.
+- **Links** are composable transport layers: `httpLink`, `httpBatchLink`, `wsLink`, custom links.
+- Client uses an internal "transformer" for serialization (e.g., `superjson`).
+
+### Adapters
+- Adapt servers to different runtimes/frameworks: standalone Node HTTP, Express, Fastify, Next.js, AWS Lambda, etc.
+- Adapters are published as separate `@trpc/...` packages (e.g., `@trpc/express`, `@trpc/fastify`).
+
+## Development Workflow
+
+### Setup & Commands
+```bash
+pnpm install          # install all workspace dependencies
+pnpm build            # build all packages (usually with `pnpm -r build`)
+pnpm dev              # run dev mode for all packages (watch mode)
+pnpm lint             # lint all packages
+pnpm test             # run all unit & integration tests
+pnpm test -- --coverage  # with coverage
 ```
 
-### 3. Build the App Router
-In `server/routers/index.ts`:
-```typescript
-import { router } from '../trpc';
-import { userRouter } from './user';
-
-export const appRouter = router({
-  user: userRouter,
-});
-
-export type AppRouter = typeof appRouter;
+### Running Individual Packages
+From the root, you can run scripts for a specific package using pnpm filtering, e.g.:
+```bash
+pnpm --filter @trpc/server test
+pnpm --filter @trpc/client build
 ```
+Or enter the package directory: `cd packages/server` then `pnpm test`.
 
-### 4. Create Context
-In `server/context.ts`:
-```typescript
-import { CreateNextContextOptions } from '@trpc/server/adapters/next'; // if Next.js
-export const createContext = async (opts: CreateNextContextOptions) => {
-  return { db: /* your db client */ };
-};
-```
+### Adding a New Package
+1. Create folder under `packages/`
+2. `package.json` must have "name" scoped to `@trpc/<name>`
+3. Inherit TypeScript config: `"@trpc/config/tsconfig.json"` (or use project references)
+4. Add `tsup.config.ts` if building with tsup
+5. Update root `pnpm-workspace.yaml` (it uses globs, usually auto-included) and add to release workflow if necessary.
 
-### 5. Set up tRPC Client
-In `client/trpc.ts`:
-```typescript
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server/routers'; // import type only
+### Common Tasks
+- **Add a new adapter**: Copy structure from existing adapter (e.g., `packages/express`), implement `createHTTPHandler` or equivalent, export types, add tests.
+- **Fix a server bug**: Navigate to `packages/server/src`, understand router/procedure execution model. Core logic lives in `router.ts`, `procedure.ts`, `middleware.ts`, `internals/`.
+- **Update client behavior**: Look at `packages/client/src`, especially link chain, `TRPCClientError`, and runtime proxy generation.
+- **Documentation updates**: The `www/` folder contains Docusaurus markdown. Run `pnpm docs:dev` to preview.
 
-export const trpc = createTRPCReact<AppRouter>();
-```
+### Important Files
+- `packages/server/src/core/internals/` – core runtime logic (execution, procedure callstack).
+- `packages/server/src/router.ts` – Router class implementation.
+- `packages/client/src/internals/links.ts` – Link composition and execution.
+- `packages/client/src/createTRPCUntypedClient.ts` – base untyped client creation.
+- `packages/tests/` – end-to-end test suites that exercise combinations of adapters, links, and middleware.
 
-### 6. Use in React Component
-```typescript
-import { trpc } from './trpc';
+## Testing
 
-function UserProfile({ id }: { id: string }) {
-  const { data, isLoading } = trpc.user.getById.useQuery({ id });
-  const mutation = trpc.user.create.useMutation();
-  // ...
-}
-```
+- Unit tests: co-located with source files as `*.test.ts`.
+- Integration tests: `packages/tests/server/`, `packages/tests/client/`, etc. Run with `pnpm test`.
+- Use `vitest` globals (`describe`, `it`, `expect`).
+- Many server tests spin up an HTTP server on a random port (using `node:net`/`get-port`) and create a tRPC client to test end-to-end.
+- Mocking is minimal; prefer actual server instances.
 
-## Common Tasks and Guidance
+## Scripts & Automation
 
-### Adding Authentication Middleware
-```typescript
-const isAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
-  return next({ ctx: { user: ctx.user } }); // user is now non-nullable
-});
-// protectedProcedure = t.procedure.use(isAuthed);
-```
+- `scripts/update-versions.ts` – bumps versions across all packages.
+- `scripts/codegen.ts` – (if exists) used for generating client types from server.
+- CI runs on GitHub Actions: lint, typecheck, build, test over multiple Node versions.
 
-### Error Handling
-- Use `TRPCError` to throw typed errors with codes (e.g., NOT_FOUND, BAD_REQUEST, FORBIDDEN).
-- On client, query/mutation hooks return `error` property; you can check `error.data.code`.
-- Global error formatting: `t.errorFormatter`.
+## Useful Commands (Quick Reference)
 
-### Input Validation
-Always use `zod` for procedure inputs. Define schemas alongside procedures.
+| Goal                          | Command                                                   |
+|-------------------------------|-----------------------------------------------------------|
+| Install dependencies           | `pnpm install`                                            |
+| Build all packages            | `pnpm build` (or `pnpm -r build`)                         |
+| Test a specific package       | `pnpm --filter @trpc/server test`                         |
+| Run linter                    | `pnpm lint`                                               |
+| Start docs locally            | `cd www && pnpm dev`                                      |
+| Create new package            | copy existing adapter, update names, implement handler    |
+| Bump versions                 | `pnpm run bump-all` (if available) or update manually     |
 
-### Debugging Type Issues
-- If types aren't inferred, ensure the client imports `AppRouter` type correctly.
-- For monorepos, ensure proper TypeScript project references.
-- Use `trpc.useUtils()` to invalidate queries after mutations.
+## Note for AI Agents
 
-### Transforming Responses / Payloads
-Use `superjson` as a transformer for Date, Map, Set etc.:
-```typescript
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
-```
-
-### Next.js App Router Integration
-- Use `@trpc/next` with `createNextApiHandler` for pages router.
-- For app router: use `fetch request handler` and `createTRPCNext` is not needed; use `createTRPCReact` and `trpcProvider`.
-
-### Testing tRPC
-- Call procedures directly on the server without HTTP: `const caller = appRouter.createCaller(mockCtx);` then `caller.user.create(...)`.
-
-## Quick Reference Commands
-- Define router: `export const appRouter = router({ ... });`
-- Query procedure: `.query(...)`
-- Mutation procedure: `.mutation(...)`
-- Subscription: `.subscription(...)`
-- Create context: `async (opts) => ({ ... })`
-- Client setup: `createTRPCReact<AppRouter>()`
-- React hook: `trpc.<route>.<procedure>.useQuery(input?)`
-- Invalidating: `utils.<route>.<procedure>.invalidate()`
-
-## Pitfalls
-- Always import types from server using `import type` to avoid bundling server code on client.
-- Middleware order matters: `publicProcedure.use(m1).use(m2)` executes m1 then m2.
-- Context is not shared between subscriptions; use wssContext differently.
-- Large inputs/outputs: avoid unnecessary data, use selects/picks.
-
-This skill helps you navigate tRPC codebases, implement type-safe APIs quickly, and debug common issues.
+When working on changes:
+- Use `pnpm` for all operations; do not use `npm` or `yarn`.
+- Always run lint and tests after modifications.
+- If adding new exports, update the package's `package.json` `exports` map and main entry.
+- For runtime errors, examine the procedure execution trace (errors include `.cause` – often a `TRPCError`).
+- Use `superjson` for Date/Map/Set serialization; transformers are standard across server and client.
+- Adapters follow a consistent pattern: export a way to create a request handler (e.g., `createExpressMiddleware`), often by calling `resolveHTTPResponse` from `@trpc/server/http`.
