@@ -1,75 +1,94 @@
-# Spring Boot Codex Skill
+# Spring Boot Development Skill
 
-## Purpose
-Provide guidance for AI coding agents working with the Spring Boot repository, enabling efficient navigation, development, and contribution.
+This skill equips an AI coding agent with essential knowledge to contribute to the [spring-projects/spring-boot](https://github.com/spring-projects/spring-boot) repository, which provides the core framework for creating stand-alone, production-grade Spring-based applications.
 
-## Repository Structure Overview
-- **spring-boot-project/**: Main source code, divided into:
-  - `spring-boot`: Core module (SpringApplication, environment, web server, etc.)
-  - `spring-boot-autoconfigure`: Auto-configuration classes (conditional beans, starters)
-  - `spring-boot-actuator`: Production-ready features (health, metrics, endpoints)
-  - `spring-boot-starters/`: Starter POMs that bundle dependencies
-  - Other modules: `spring-boot-devtools`, `spring-boot-test`, `spring-boot-test-autoconfigure`, etc.
-- **spring-boot-tools/**: Maven and Gradle plugins, build tooling (e.g., `spring-boot-maven-plugin`, `spring-boot-gradle-plugin`)
-- **spring-boot-tests/**: Integration tests, smoke tests, deployment tests
-- **spring-boot-docs/**: Reference documentation sources (Asciidoctor)
-- **spring-boot-samples/**: Example applications demonstrating features
+## Prerequisites
+
+- Java 17 or later (check the `java.version` property in the root `pom.xml` for the exact version).
+- Git
+- An IDE with Spring support (optional but helpful).
+
+## Repository Layout
+
+- **spring-boot-project/spring-boot** – Core Spring Boot classes (SpringApplication, Banner, etc.)
+- **spring-boot-project/spring-boot-autoconfigure** – Auto-configuration support (`@EnableAutoConfiguration`)
+- **spring-boot-project/spring-boot-starters** – Starter POMs
+- **spring-boot-project/spring-boot-actuator** – Production-ready features (metrics, health, etc.)
+- **spring-boot-project/spring-boot-actuator-autoconfigure** – Auto-configuration for Actuator
+- **spring-boot-project/spring-boot-test** – Test utilities and annotations (e.g., `@SpringBootTest`)
+- **spring-boot-project/spring-boot-test-autoconfigure** – Auto-configuration for tests
+- **spring-boot-project/spring-boot-tools** – Devtools, loader, Maven/Gradle plugins
+- **spring-boot-tests** – Integration and smoke tests
+- **spring-boot-system-tests** – System-level tests
 
 ## Build & Test Commands
-- **Full build**: `./gradlew build` (Gradle wrapper; requires Java 17+)
-- **Core module build**: `./gradlew spring-boot-project:spring-boot:build`
-- **Run all tests**: `./gradlew test`
-- **Run a specific test class**: `./gradlew :spring-boot-project:spring-boot-autoconfigure:test --tests "org.springframework.boot.autoconfigure.condition.ConditionalOnClassTests"`
-- **Build without tests**: `./gradlew assemble -x test`
-- **Generate docs**: `./gradlew :spring-boot-docs:asciidoctor`
-- **Check dependency updates**: `./gradlew dependencyUpdates`
 
-## Common Development Tasks
-### Adding a New Auto-Configuration
-1. Locate relevant package under `spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/`.
-2. Create a configuration class annotated with `@Configuration` and typically `@ConditionalOnClass`, `@ConditionalOnMissingBean`, etc.
-3. Register the configuration in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` (Spring Boot 3.x) or `spring.factories` (older versions).
-4. Add corresponding `@ConfigurationProperties` if needed.
-5. Add tests in the same autoconfigure module under `src/test/java/.../autoconfigure/` using `ApplicationContextRunner`.
+Use the Maven wrapper (`./mvnw` or `mvnw.cmd`) to ensure consistent builds.
 
-### Adding a New Starter
-- Add a new module under `spring-boot-project/spring-boot-starters/`.
-- It should be a POM with the starter name, e.g., `spring-boot-starter-foo`.
-- Include the necessary dependencies, typically the auto-configuration module and third-party library.
+```bash
+# Full build (skip tests)
+./mvnw clean install -DskipTests
 
-### Fixing a Bug
-- Locate the relevant module (core, autoconfigure, web, etc.).
-- Understand the behavior by looking at tests (often named `*Tests`).
-- Write a failing test reproducing the bug, then fix.
-- Ensure backward compatibility; Spring Boot is strict about not breaking existing users.
+# Build with all tests (can be slow)
+./mvnw clean install
 
-### Working with Tests
-- **Unit Tests**: Use JUnit 5, often with `Mockito` for mocking.
-- **Application Context Tests**: Use `org.springframework.boot.test.context.runner.ApplicationContextRunner` to load minimal contexts.
-- **Web Tests**: `@SpringBootTest` with `webEnvironment` for full server testing, `MockMvc` for controller tests, `TestRestTemplate` for REST.
-- **Test Utilities**: `OutputCaptureExtension` for capturing log output, `TestPropertyValues` for dynamic property overrides.
+# Build a specific module and its dependencies
+./mvnw clean install -pl spring-boot-project/spring-boot -am
 
-## Code Style & Conventions
-- Follow Spring Framework code style (tab size 4, indent 4 spaces).
-- Class names, method names, and variable names follow standard Java conventions.
-- Use `@since` tags for new public elements.
-- Javadoc on public API is mandatory.
-- License header must be present (Apache 2.0).
+# Run tests for a specific module
+./mvnw test -pl spring-boot-project/spring-boot-autoconfigure
 
-## Useful Patterns
-- **Auto-configuration ordering**: Use `@AutoConfigureBefore`/`@AutoConfigureAfter` to control order.
-- **Conditional annotations**: `ConditionalOnClass`, `ConditionalOnMissingBean`, `ConditionalOnProperty`, `ConditionalOnWebApplication`, etc.
-- **Property binding**: Use `@ConfigurationProperties` with `@ConstructorBinding` (recommended for immutable config) or JavaBean binding.
+# Build with the 'fast' profile to skip long-running tests
+./mvnw clean install -Pfast
 
-## Dependency Insights
-- Spring Boot manages a curated set of dependencies via the `spring-boot-dependencies` BOM.
-- When adding a new third-party library, consider adding it to the BOM (`spring-boot-project/spring-boot-dependencies/build.gradle`).
+# Run a single test class
+./mvnw test -pl spring-boot-project/spring-boot-autoconfigure -Dtest=MyTestClass
+```
+
+## Coding Conventions
+
+- **Java formatting**: The project enforces a consistent style via [Spring Java Format](https://github.com/spring-io/spring-javaformat). Apply it with:
+  ```bash
+  ./mvnw spring-javaformat:apply
+  ```
+- **Checkstyle**: Run `./mvnw checkstyle:check` before committing. Configuration files live in `src/checkstyle`.
+- **Imports**: No wildcard imports. Import order is configured by the Eclipse/IntelliJ formatter settings in the repository.
+- **Tests**: Use JUnit 5 and AssertJ. Mockito is available for mocking. Prefer `ApplicationContextRunner` for testing auto-configuration (see `spring-boot-test-autoconfigure` module).
+
+## Contribution Workflow
+
+1. Fork the repository and create a branch from `main`.
+2. Make your changes, adhering to the coding conventions.
+3. Ensure all tests pass and no checkstyle violations are present.
+4. Run `./mvnw clean install -Pfast` to verify the build.
+5. Commit with a descriptive message referencing any related issue (e.g., "Closes gh-1234").
+6. Push your branch and open a pull request against `spring-projects/spring-boot:main`.
+
+## Auto-configuration Registration
+
+- For Spring Boot 2.7+, auto-configuration classes are listed in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
+- For older versions or integration with `spring.factories`, register in `META-INF/spring.factories` under `org.springframework.boot.autoconfigure.EnableAutoConfiguration`.
+- Always annotate auto-configuration classes with `@AutoConfiguration` (since 2.7) and `@Conditional*` annotations.
+
+## Dependency Management
+
+- The root `spring-boot-dependencies` POM manages all dependency versions. Use it as the BOM for downstream projects.
+- When adding a new dependency, ensure the version aligns with the managed set. Version properties are defined in `<properties>` of the root POM.
 
 ## Documentation
-- New features must be documented in `spring-boot-docs/src/docs/asciidoc/` using Asciidoctor.
-- Update relevant `.adoc` files (e.g., `howto.adoc`, `features/*.adoc`).
 
-## Links
-- Main repository: https://github.com/spring-projects/spring-boot
-- Reference documentation: https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/
-- Issue tracker: https://github.com/spring-projects/spring-boot/issues
+- Reference documentation is written in Asciidoctor and located under `src/main/asciidoc` of the relevant module.
+- To build the docs locally: `./mvnw clean package -Pfull -pl spring-boot-project/spring-boot-docs` (may take time).
+
+## Testing Best Practices
+
+- **Unit tests**: Should be fast and not require a Spring `ApplicationContext`.
+- **Auto-configuration tests**: Use `ApplicationContextRunner` (in `spring-boot-test-autoconfigure`) to verify context loading without full server overhead.
+- **Integration tests**: Located in `spring-boot-tests`. They may start an embedded server and exercise full scenarios.
+- Use `@ConfigurationProperties` scanning carefully; prefer explicit binding for new configuration.
+
+## Useful Tips
+
+- The `spring-boot-project/spring-boot/src/main/resources/META-INF/spring-configuration-metadata.json` file is generated. Do not edit it manually; update the appropriate Java classes and rebuild.
+- For AOT processing (Spring Boot 3.x), refer to the `spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/aot` package.
+- When modifying auto-configuration, always consider backward compatibility and impact on user-defined beans (`@ConditionalOnMissingBean`).
