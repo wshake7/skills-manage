@@ -1,160 +1,71 @@
-# tRPC Skill
+# tRPC Monorepo Skill
 
 ## Overview
-tRPC (TypeScript Remote Procedure Call) provides end-to-end type safety between your client and server without code generation. It leverages TypeScript to infer request/response types across the network, enabling a seamless developer experience.
+tRPC is an end-to-end typesafe RPC framework for TypeScript. This skill helps navigate and contribute to the official trpc/trpc GitHub monorepo, which contains the core packages, adapters, examples, and documentation site.
 
-**When to use this skill:** You are working in a codebase that uses tRPC (package `@trpc/server`, `@trpc/client`) or when you need to implement type-safe API communication between a TypeScript server and client (React, Next.js, Node.js, etc.).
+## Repository Structure
+The monorepo is managed with pnpm workspaces and Turborepo.
+- **`packages/`** – Core packages:
+  - `server` – `@trpc/server`: router, procedure definitions, middleware.
+  - `client` – `@trpc/client`: bare client with links (httpLink, wsLink, etc.).
+  - `react-query` – `@trpc/react-query`: React bindings.
+  - `next` – `@trpc/next`: Next.js integration.
+  - `openapi` – `@trpc/openapi`: REST / OpenAPI compatibility.
+  - `playground` – `@trpc/playground`: GraphiQL-style API explorer.
+  - `observable` – shared Observable utility (used for subscriptions).
+- **`examples/`** – Runable example apps (e.g., `.minimal`, `.next-prisma-starter`, `.fastify`).
+- **`www/`** – Documentation site built with Docusaurus.
+- **`scripts/`** – Internal build/release helpers.
+- Root config files: `pnpm-workspace.yaml`, `turbo.json`, `.changeset/config.json`.
 
-## Core Concepts
-- **Procedures:** The server endpoints, defined as **queries** (GET), **mutations** (POST/PUT/DELETE), or **subscriptions** (WebSocket).
-- **Router:** A collection of procedures, organized hierarchically.
-- **Middleware:** Functions that run before a procedure (e.g., authentication, logging).
-- **Context:** Request-scoped data (e.g., user, database connection) passed to all procedures and middleware.
-- **Client:** The typed API client that mirrors the server router structure, enabling autocompletion and type-checking for inputs and outputs.
+## Setup & Development
+- **Prerequisites**: Node.js (LTS), pnpm (install via `npm i -g pnpm`).
+- **Install dependencies**: `pnpm install`
+- **Build all packages**: `pnpm build` (uses Turborepo).
+- **Develop with watch mode**: `pnpm dev` (runs `turbo dev`).
+- **Run all tests**: `pnpm test`
+- **Lint**: `pnpm lint`; **Format**: `pnpm format` (often a pre-commit hook handles it).
 
-## Project Structure (Typical)
-```
-project/
-├── server/
-│   ├── trpc.ts          # tRPC instance creation
-│   ├── context.ts       # Context factory
-│   ├── routers/
-│   │   ├── index.ts     # App router (merges sub-routers)
-│   │   └── user.ts      # Sub-router for user operations
-│   └── index.ts         # Entry, export appRouter type
-├── client/
-│   ├── trpc.ts          # tRPC client setup
-│   └── components/      # React components using tRPC hooks
-└── shared/              # Alternatively, import types directly from server
-```
+## Common Workflows
+- **Working on a single package**:
+  ```bash
+  cd packages/server
+  pnpm test          # run tests for server package
+  pnpm dev           # build in watch mode (if configured)
+  ```
+- **Run a specific test file**: `pnpm vitest run path/to/test` (vitest is the test runner).
+- **View docs locally**: `cd www && pnpm dev` → opens Docusaurus site.
+- **Start an example**: Navigate to an example folder and follow its README (usually `pnpm dev`).
 
-## Workflow for AI Agent
+## Contributing
+- All code contributions must follow the [Contributing Guide](CONTRIBUTING.md).
+- Use **conventional commits** (e.g., `feat(server): add new procedure`).
+- Create a **changeset** before pushing: `pnpm changeset` (in root). This generates a markdown file in `.changeset/` that drives the release process.
+- CI runs lint, type checks, tests, and build on each PR.
+- Ensure new functions/classes have proper TSDoc comments for auto-generated docs.
 
-### 1. Set up tRPC Server Instance
-In `server/trpc.ts`:
-```typescript
-import { initTRPC } from '@trpc/server';
+## Key Architectural Concepts
+- **Router** – collection of procedures; builds the API surface.
+- **Procedure** – a query, mutation, or subscription defined with `.input()` and `.query()/.mutation()/.subscription()`.
+- **Middleware** – reusable logic that runs before a procedure (e.g., auth, logging).
+- **Context** – per-request metadata (e.g., user session, db connection) created by `createContext`.
+- **Links** – client-side pipeline for request handling (httpLink, wsLink, loggerLink, etc.).
 
-export const t = initTRPC.create();
-export const router = t.router;
-export const publicProcedure = t.procedure;
-// Later: auth middleware, protected procedures
-```
+## Testing Tips
+- Vitest is used throughout; mocks can be created with `vi.mock()`.
+- For server procedures, use `createCallerFactory` to invoke them without HTTP.
+- Common test patterns: use `@trpc/server` internals like `callProcedure` or snapshot testing with Zod schemas.
 
-### 2. Define Procedures in Routers
-In `server/routers/user.ts`:
-```typescript
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+## Useful Files
+- Root `package.json` – top-level scripts.
+- `turbo.json` – pipeline definitions.
+- `packages/server/src/core` – core router/procedure logic.
+- `packages/server/src/adapters` – HTTP adapters (standalone, fetch, fastify, express, etc.).
+- `packages/client/src/links` – built-in links.
 
-export const userRouter = router({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input, ctx }) => {
-      return ctx.db.user.findUnique({ where: { id: input.id } });
-    }),
-  create: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      return ctx.db.user.create({ data: input });
-    }),
-});
-```
+## Notes
+- The repo actively moves to ESM; be mindful of import/export conditions.
+- Extensive use of generics and type inference; keep types strict.
+- When adding a new adapter, follow patterns in existing adapter packages.
 
-### 3. Build the App Router
-In `server/routers/index.ts`:
-```typescript
-import { router } from '../trpc';
-import { userRouter } from './user';
-
-export const appRouter = router({
-  user: userRouter,
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### 4. Create Context
-In `server/context.ts`:
-```typescript
-import { CreateNextContextOptions } from '@trpc/server/adapters/next'; // if Next.js
-export const createContext = async (opts: CreateNextContextOptions) => {
-  return { db: /* your db client */ };
-};
-```
-
-### 5. Set up tRPC Client
-In `client/trpc.ts`:
-```typescript
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server/routers'; // import type only
-
-export const trpc = createTRPCReact<AppRouter>();
-```
-
-### 6. Use in React Component
-```typescript
-import { trpc } from './trpc';
-
-function UserProfile({ id }: { id: string }) {
-  const { data, isLoading } = trpc.user.getById.useQuery({ id });
-  const mutation = trpc.user.create.useMutation();
-  // ...
-}
-```
-
-## Common Tasks and Guidance
-
-### Adding Authentication Middleware
-```typescript
-const isAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
-  return next({ ctx: { user: ctx.user } }); // user is now non-nullable
-});
-// protectedProcedure = t.procedure.use(isAuthed);
-```
-
-### Error Handling
-- Use `TRPCError` to throw typed errors with codes (e.g., NOT_FOUND, BAD_REQUEST, FORBIDDEN).
-- On client, query/mutation hooks return `error` property; you can check `error.data.code`.
-- Global error formatting: `t.errorFormatter`.
-
-### Input Validation
-Always use `zod` for procedure inputs. Define schemas alongside procedures.
-
-### Debugging Type Issues
-- If types aren't inferred, ensure the client imports `AppRouter` type correctly.
-- For monorepos, ensure proper TypeScript project references.
-- Use `trpc.useUtils()` to invalidate queries after mutations.
-
-### Transforming Responses / Payloads
-Use `superjson` as a transformer for Date, Map, Set etc.:
-```typescript
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
-```
-
-### Next.js App Router Integration
-- Use `@trpc/next` with `createNextApiHandler` for pages router.
-- For app router: use `fetch request handler` and `createTRPCNext` is not needed; use `createTRPCReact` and `trpcProvider`.
-
-### Testing tRPC
-- Call procedures directly on the server without HTTP: `const caller = appRouter.createCaller(mockCtx);` then `caller.user.create(...)`.
-
-## Quick Reference Commands
-- Define router: `export const appRouter = router({ ... });`
-- Query procedure: `.query(...)`
-- Mutation procedure: `.mutation(...)`
-- Subscription: `.subscription(...)`
-- Create context: `async (opts) => ({ ... })`
-- Client setup: `createTRPCReact<AppRouter>()`
-- React hook: `trpc.<route>.<procedure>.useQuery(input?)`
-- Invalidating: `utils.<route>.<procedure>.invalidate()`
-
-## Pitfalls
-- Always import types from server using `import type` to avoid bundling server code on client.
-- Middleware order matters: `publicProcedure.use(m1).use(m2)` executes m1 then m2.
-- Context is not shared between subscriptions; use wssContext differently.
-- Large inputs/outputs: avoid unnecessary data, use selects/picks.
-
-This skill helps you navigate tRPC codebases, implement type-safe APIs quickly, and debug common issues.
+For detailed API usage, refer to the official documentation at https://trpc.io.
