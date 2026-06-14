@@ -2,10 +2,9 @@
   "name": "trpc",
   "layer": "cloud",
   "sourceRepo": "trpc/trpc",
-  "sourceCommit": "f8f0c0e3979ecb980d38e9369fa8c98df95d212b",
+  "sourceCommit": "23c723cfeaf07da28a52a5c35c3dcccf96a47578",
   "provider": "deepseek",
-  "mode": "generated",
-  "generatedAt": "2026-06-14T07:11:35.489Z",
+  "generatedAt": "2026-04-29T13:37:18.724Z",
   "managedBy": "skills-manage",
   "overrides": []
 }
